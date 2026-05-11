@@ -1,0 +1,130 @@
+.container {
+  min-height: 100vh;
+  background-color: #F8F7F2; /* Warna cream putih terang sesuai gambar */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #1A1A1A;
+  font-family: Stack Sans Headline
+}
+
+.wrapper {
+  width: 100%;
+  max-width: 550px;
+}
+
+.title {
+  font-size: 2rem;
+  margin-bottom: 2rem;
+  font-weight: bold;
+  letter-spacing: -1.5px;
+}
+
+.optionCard {
+  border: 1px solid #F8F7F2;
+  border-radius: 16px;
+  padding: 1.5rem 2rem;
+  margin-bottom: 1.5rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  background-color: transparent;
+  transition: all 0.2s ease-in-out;
+  border-color: #999;
+}
+
+.optionCard:hover {
+  border-color: #999;
+}
+
+/* State Aktif sesuai permintaan warnanya */
+.optionCard.active {
+  background-color: #F3C51C;
+  border-color: #F3C51C;
+  color: #7E5417;
+}
+
+.radioCircle {
+  min-width: 20px;
+  height: 20px;
+  border: 1.5px solid #A1A1A1;
+  border-radius: 50%;
+  margin-right: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.optionCard.active .radioCircle {
+  border-color: #7E5417;
+}
+
+/* Lingkaran dalam saat aktif */
+.optionCard.active .radioCircle::after {
+  content: "";
+  width: 10px;
+  height: 10px;
+  background-color: #7E5417;
+  border-radius: 50%;
+}
+
+.icon {
+  margin-right: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Ubah dari .icon svg menjadi .icon img */
+.icon img {
+  width: 28px;
+  height: 28px;
+  object-fit: contain; /* Memastikan gambar tidak gepeng */
+}
+
+.textGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.textGroup h3 {
+  font-size: 1.3rem;
+  font-weight: bold;
+  letter-spacing: -1px;
+}
+
+.textGroup p {
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+.actionButtons {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.btnBack {
+  background-color: #333333;
+  color: white;
+  padding: 0.8rem 2.5rem;
+  border-radius: 50px;
+  border: none;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 1rem;
+}
+
+.btnNext {
+  background-color: #F3C51C;
+  color: #1A1A1A;
+  padding: 0.8rem 2.5rem;
+  border-radius: 50px;
+  border: none;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 1rem;
+}

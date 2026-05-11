@@ -1,0 +1,97 @@
+.container {
+  min-height: 100vh;
+  background-image: url('/back.png');
+  background-size: cover;
+  background-color: #F8F7F2;
+  background-position: center;
+  position: relative;
+  color: white;
+  overflow: hidden;
+}
+
+.navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem 5%;
+  z-index: 50;
+  gap: 3rem;
+  letter-spacing: -1px;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  margin-right: 2rem;
+}
+
+.navLinks {
+  display: flex;
+  gap: 3rem;
+  font-weight: 400;
+  font-size: 1.1rem;
+}
+
+.mainContent {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  height: 100vh;
+  padding: 0 8%;
+}
+
+.textSection {
+  max-width: 550px;
+}
+
+.title {
+  font-size: 3.5rem;
+  line-height: 1.1;
+  font-weight: bold;
+  margin-bottom: 1.5rem;
+  letter-spacing: -1px;
+  line-height: 55px;
+}
+
+.subtitle {
+  font-size: 1.1rem;
+  line-height: 1.1;
+  margin-bottom: 2.5rem;
+  opacity: 0.9;
+}
+
+.loginBtn {
+  background-color: white;
+  color: #000;
+  padding: 1rem 5rem;
+  border-radius: 50px;
+  font-weight: normal;
+  letter-spacing: -1px;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  display: inline-block;
+}
+
+.loginBtn:hover {
+  background-color: #f0f0f0;
+  transform: scale(1.1);
+
+}
+
+/* Kotak Gradasinya */
+.graphicsWrapper {
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 50vw;
+  height: 100vh;
+  z-index: 1;
+  pointer-events: none; /* Supaya kotaknya tidak menghalangi jika ada elemen yang mau diklik */
+}
+

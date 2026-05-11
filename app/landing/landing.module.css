@@ -1,0 +1,44 @@
+.container {
+    width: 1512px;
+    height: 982px;
+    background-color: white;
+}
+.navbar{
+    color: #F8F7F2;
+    font-family: "Stack Sans Headline";
+    font-size: 24px;
+    font-style: normal;
+    font-weight: 400;
+    line-height: normal;
+    letter-spacing: -0.48px;
+    position: absolute;
+    justify-content: center;
+    display: flex;
+    flex-direction: row;
+    gap: 64px;
+    width: 100%;
+    margin-top: 64px;
+}
+
+.sect button{
+    position: relative;
+    left: 7%;
+    top: 10%;
+    cursor: pointer;
+    background-color: #F8F7F2;
+    width: 200px;
+    height: 55px;
+    border-radius: 40px;
+    transition: transform 0.3s, background-color 0.3s;
+    color: rgb(36, 36, 36);
+    font-size: 14px;
+}
+
+.sect button:hover{
+    transform: scale(1.1);
+    background-color: rgb(249, 152, 6);
+    color: rgb(39, 39, 39);
+}
+.back img{
+    position: -3;
+}

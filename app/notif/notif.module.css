@@ -1,0 +1,146 @@
+/* notif.module.css — Halaman notifikasi izin guru */
+
+.page {
+  min-height: 100vh;
+  background-color: #F8F7F2;
+  font-family: 'Stack Sans Headline', sans-serif;
+  color: #333;
+}
+
+.dark { background-color: #0F0F0F; color: #F0F0F0; }
+.dark .header { background-color: #0F0F0F; border-color: #2E2E2E; }
+.dark .headerTitle { color: #F0F0F0; }
+.dark .btnBack { color: #F0F0F0; }
+.dark .btnClear { color: #888; }
+.dark .notifCard { background-color: #1E1E1E; border-color: #2E2E2E; }
+.dark .notifUnread { background-color: #1A2A3A; }
+.dark .notifTitle, .dark .notifAlasan { color: #D0D0D0; }
+.dark .notifKelas, .dark .notifDate { color: #888; }
+.dark .empty { color: #666; }
+
+.header {
+  display: flex; align-items: center; gap: 12px;
+  padding: 20px 24px;
+  border-bottom: 1px solid #E8E8E8;
+  position: sticky; top: 0; background-color: #F8F7F2; z-index: 10;
+}
+
+.btnBack {
+  background: none; border: none; cursor: pointer;
+  color: #333; padding: 4px; display: flex; align-items: center;
+  transition: opacity .2s;
+}
+.btnBack:hover { opacity: 0.6; }
+
+.headerTitle {
+  font-size: 18px; font-weight: 700; color: #333; flex: 1;
+}
+
+.btnClear {
+  background: none; border: none; cursor: pointer;
+  font-size: 13px; color: #A8A8A8; font-family: inherit;
+  transition: color .2s;
+}
+.btnClear:hover { color: #E53E3E; }
+
+.content {
+  padding: 16px 24px 48px;
+  display: flex; flex-direction: column; gap: 12px;
+  max-width: 680px; margin: 0 auto;
+}
+
+.empty {
+  text-align: center; color: #A8A8A8;
+  padding: 60px 0; font-size: 14px;
+}
+
+/* Notif card */
+.notifCard {
+  position: relative;
+  display: flex; gap: 14px; align-items: flex-start;
+  background-color: #FFFFFF;
+  border: 1px solid #E8E8E8;
+  border-radius: 16px;
+  padding: 16px;
+  transition: background .15s;
+}
+
+.notifUnread {
+  background-color: #EEF3FF;
+  border-color: #C8D9F0;
+}
+
+.unreadDot {
+  position: absolute; top: 14px; right: 14px;
+  width: 8px; height: 8px; border-radius: 50%;
+  background-color: #3E71A3;
+}
+
+.notifIcon {
+  width: 42px; height: 42px; border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+
+.notifBody {
+  flex: 1; display: flex; flex-direction: column; gap: 4px;
+}
+
+.notifTitle { font-size: 14px; color: #333; line-height: 1.4; }
+.notifName { font-weight: 700; }
+
+.tagIzin {
+  display: inline-block; background-color: #EEF3FF; color: #3E71A3;
+  font-size: 11px; font-weight: 600; border-radius: 6px; padding: 1px 7px; margin: 0 2px;
+}
+.tagSakit {
+  display: inline-block; background-color: #FFF4DC; color: #A06B00;
+  font-size: 11px; font-weight: 600; border-radius: 6px; padding: 1px 7px; margin: 0 2px;
+}
+
+.notifKelas { font-size: 12px; color: #A8A8A8; }
+.notifAlasan { font-size: 13px; color: #555; font-style: italic; margin-top: 2px; }
+.notifDate { font-size: 11px; color: #A8A8A8; margin-top: 2px; }
+
+.actionRow { display: flex; gap: 8px; margin-top: 8px; }
+
+.btnApprove {
+  height: 32px; padding: 0 16px;
+  background-color: #4CAF50; color: #fff;
+  border: none; border-radius: 20px;
+  font-size: 13px; font-weight: 600; font-family: inherit;
+  cursor: pointer; transition: opacity .2s;
+}
+.btnApprove:hover { opacity: 0.85; }
+
+.btnReject {
+  height: 32px; padding: 0 16px;
+  background-color: transparent; color: #E53E3E;
+  border: 1.5px solid #E53E3E; border-radius: 20px;
+  font-size: 13px; font-weight: 600; font-family: inherit;
+  cursor: pointer; transition: background .2s, color .2s;
+}
+.btnReject:hover { background-color: #FFE9E9; }
+
+.statusApproved {
+  margin-top: 6px; font-size: 12px; font-weight: 600;
+  color: #4CAF50; padding: 4px 0;
+}
+.statusRejected {
+  margin-top: 6px; font-size: 12px; font-weight: 600;
+  color: #E53E3E; padding: 4px 0;
+}
+
+/* Toast */
+.toast {
+  position: fixed; bottom: 32px; right: 24px;
+  background-color: #4CAF50; color: #fff;
+  padding: 12px 22px; border-radius: 40px; font-size: 13px;
+  z-index: 1000; box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+  animation: toastIn .3s ease; max-width: 320px;
+}
+.toastErr { background-color: #FF4343; }
+@keyframes toastIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}

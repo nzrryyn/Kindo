@@ -1,0 +1,597 @@
+/* ================================================
+   HOME ORANG TUA — ortu.module.css
+   Spec: Main card 703×517px, child cards 656×150px
+   ================================================ */
+
+/* ── PAGE ── */
+.page {
+  min-height: 100vh;
+  background-color: #EEF3FB;
+  font-family: 'Stack Sans Headline', sans-serif;
+  color: #333333;
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* ── BG SVG — atas halaman, tidak fixed, setengah kelihatan ── */
+.bgWrap {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 300px;
+  overflow: hidden;
+  z-index: 0;
+  pointer-events: none;
+}
+.bgImg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* ── DARK ── */
+.dark { background-color: #0F0F0F; color: #F0F0F0; }
+.dark .kegCard,
+.dark .statusCard { background-color: #1E1E1E; border-color: #2E2E2E; color: #F0F0F0; }
+.dark .kegTitle, .dark .statusTitle { color: #F0F0F0; }
+.dark .kegText { color: #A8A8A8; }
+.dark .kegTime { color: #D0D0D0; }
+.dark .statusSub { color: #A8A8A8; }
+.dark .mainCard { background-color: #1E1E1E; border-color: #2E2E2E; }
+.dark .childCard { background-color: #1E1E1E; border-color: #2E2E2E; }
+.dark .childCardTitle { color: #F0F0F0; }
+.dark .childCardDesc { color: #888; }
+.dark .childIconBox { background-color: #2A2A2A; }
+.dark .izinTextarea { background-color: #2A2A2A; color: #F0F0F0; }
+.dark .perkDropdown { background-color: #2A2A2A; border-color: #3A3A3A; color: #F0F0F0; }
+.dark .totalAspekBox { background-color: #2A2A2A; border-color: #3A3A3A; color: #D0D0D0; }
+.dark .gradeLabel { color: #F8F7F2; }
+.dark .bottomNavbar { background-color: #1E1E1E; }
+.dark .userPopup { background-color: #1E1E1E; border-color: #2E2E2E; }
+.dark .panel { background-color: #1E1E1E; }
+.dark .panelTitle, .dark .panelMonth { color: #F0F0F0; }
+.dark .panelSmLabel, .dark .panelSub, .dark .sppListBulan { color: #A8A8A8; }
+.dark .sppDetailBox, .dark .sppPayBox { background-color: #2A2A2A; border-color: #3A3A3A; }
+.dark .sppDetailRow { border-color: #3A3A3A; color: #D0D0D0; }
+.dark .sppPaySelect { background-color: #333; color: #F0F0F0; border-color: #555; }
+.dark .sppListRow { border-color: #2E2E2E; }
+.dark .sppListNominal { color: #F0F0F0; }
+.dark .perkInfoBox { background-color: #2A2A2A; border-color: #3A3A3A; }
+.dark .perkInfoVal { color: #F0F0F0; }
+.dark .perkInfoLabel { color: #A8A8A8; }
+.dark .aspekTab { background-color: #2A2A2A; border-color: #3A3A3A; color: #A8A8A8; }
+.dark .catatanBox { background-color: #2A2A2A; border-color: #3A3A3A; }
+.dark .catatanText { color: #D0D0D0; }
+.dark .emptyText { color: #666; }
+.dark .izinSentNote { color: #A8A8A8; }
+.dark .sppPayLabel { color: #D0D0D0; }
+
+/* ── HEADER ── */
+.header {
+  position: relative; z-index: 10;
+  display: flex; align-items: center; justify-content: flex-end; gap: 12px;
+  padding: 28px 32px 0;
+}
+.headerName {
+  font-size: 14px; color: #F8F7F2; opacity: 0.9; font-weight: 500;
+}
+.avatarCircle {
+  width: 36px; height: 36px; border-radius: 50%;
+  background-color: #F8F7F2;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: transform 0.2s; flex-shrink: 0;
+}
+.avatarCircle:hover { transform: scale(1.06); }
+.userPopup {
+  position: absolute; top: 46px; right: 0;
+  width: 220px; border-radius: 16px;
+  background-color: #F8F7F2; border: 1px solid #D9D9D9;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+  padding: 16px; box-sizing: border-box; z-index: 1000;
+  animation: fadeUp .2s ease;
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── SCROLL AREA ── */
+.scrollArea {
+  position: relative; z-index: 5;
+  display: flex; flex-direction: column; align-items: center;
+  padding: 20px 24px 120px;
+  gap: 16px;
+  box-sizing: border-box;
+}
+
+/* ── TOP ROW ── */
+.topRow {
+  display: flex; gap: 14px; width: 100%; max-width: 703px; align-items: stretch;
+}
+
+.kegCard {
+  flex: 1;
+  background-color: #F8F7F2;
+  border: 1px solid #D9D9D9;
+  border-radius: 30px;
+  padding: 18px 22px;
+  box-sizing: border-box;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.kegTitle {
+  font-size: 13px; font-weight: 700; color: #333333; margin-bottom: 2px;
+}
+.kegEmpty { font-size: 13px; color: #A8A8A8; }
+.kegRow { display: flex; align-items: center; gap: 8px; }
+.kegTime { font-size: 13px; font-weight: 600; color: #333; width: 42px; flex-shrink: 0; }
+.kegDash { color: #A8A8A8; font-size: 13px; }
+.kegText { font-size: 13px; color: #555; }
+.btnLihat {
+  background: none; border: none; font-size: 11px; color: #A8A8A8;
+  cursor: pointer; padding: 0; font-family: inherit; transition: color .2s;
+}
+.btnLihat:hover { color: #333; }
+
+.statusCard {
+  width: 200px; flex-shrink: 0;
+  background-color: #F8F7F2;
+  border: 1px solid #D9D9D9;
+  border-radius: 30px;
+  padding: 18px 20px;
+  box-sizing: border-box;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.statusRow { display: flex; align-items: center; gap: 8px; }
+.statusDot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; transition: background .3s; }
+.statusTitle { font-size: 14px; font-weight: 700; color: #333333; }
+.statusSub { font-size: 12px; color: #A8A8A8; line-height: 1.4; }
+
+/* ═══════════════════════════════════
+   MAIN CARD — 703×517px, r30
+═══════════════════════════════════ */
+.mainCard {
+  width: 100%; max-width: 703px;
+  background-color: #F8F7F2;
+  border: 1px solid #D9D9D9;
+  border-radius: 30px;
+  padding: 16px 24px;
+  box-sizing: border-box;
+  display: flex; flex-direction: column;
+  gap: 8px; /* gap vertikal antar card: 8px */
+}
+
+/* ═══════════════════════════════════
+   CHILD CARD — 656×150px, r15
+═══════════════════════════════════ */
+.childCard {
+  width: 100%;
+  min-height: 150px;
+  background-color: #F8F7F2;
+  border: 1px solid #D9D9D9;
+  border-radius: 15px;
+  padding: 16px 18px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  position: relative;
+}
+
+.childCardLeft {
+  display: flex; gap: 14px; flex: 1; min-width: 0;
+}
+
+.childIconBox {
+  width: 44px; height: 44px; border-radius: 12px;
+  background-color: #F0EFE9;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; margin-top: 2px;
+}
+
+.childCardInfo {
+  display: flex; flex-direction: column; gap: 6px; flex: 1;
+}
+
+.childCardTitle {
+  font-size: 15px; font-weight: 700; color: #333333;
+}
+
+.childCardDesc {
+  font-size: 12px; color: #A8A8A8;
+  display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+}
+
+.childCardRight {
+  display: flex; flex-direction: column;
+  align-items: flex-end; gap: 8px;
+  flex-shrink: 0;
+}
+
+/* ── Tombol Kirim & Selengkapnya — 94×26px, r15 ── */
+.btnAction {
+  width: 94px; height: 26px;
+  background-color: #3E71A3;
+  border: none; border-radius: 15px;
+  color: #F8F7F2; font-size: 12px; font-weight: normal;
+  font-family: inherit; cursor: pointer;
+  transition: opacity .2s, transform .15s;
+  display: flex; align-items: center; justify-content: center;
+  white-space: nowrap; flex-shrink: 0;
+}
+.btnAction:hover { opacity: 0.85; transform: translateY(-1px); }
+
+/* ── RADIO ── */
+.radioLbl {
+  display: flex; align-items: center; gap: 4px;
+  font-size: 12px; color: #555; cursor: pointer;
+}
+.radioLbl input { accent-color: #3E71A3; cursor: pointer; }
+
+/* ── IZIN TEXTAREA ── */
+.izinTextarea {
+  width: 150px; height: 60px;
+  background-color: #EFEFEF; border: none; border-radius: 12px;
+  padding: 8px 12px; font-family: inherit; font-size: 12px;
+  color: #333; outline: none; resize: none;
+}
+.izinTextarea::placeholder { color: #A8A8A8; }
+.izinSentNote {
+  font-size: 12px; color: #A8A8A8; max-width: 160px; text-align: right; line-height: 1.4;
+}
+
+/* ── PERKEMBANGAN ── */
+
+/* Dropdown 164×36 r15 */
+.perkDropdown {
+  width: 164px; height: 36px;
+  border-radius: 15px; border: 1px solid #D9D9D9;
+  background-color: #F8F7F2; color: #333;
+  padding: 0 12px; font-family: inherit; font-size: 12px; font-weight: 700;
+  outline: none; cursor: pointer;
+}
+
+/* Total aspek 120×36 */
+.totalAspekBox {
+  width: 120px; height: 36px;
+  border-radius: 15px; border: 1px solid #D9D9D9;
+  background-color: #F8F7F2;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; color: #A8A8A8;
+}
+
+/* Grade row — gap 4px horizontal */
+.gradeRow {
+  display: flex; gap: 4px; align-items: flex-start; margin-top: 4px;
+}
+
+/* BSB BSH MB BB cell = 34×34 square + label */
+.gradeCell {
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+}
+
+.gradeSquare {
+  width: 34px; height: 34px;
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 700; color: #F8F7F2;
+}
+
+/* Wider pill 164×45 for grade display in perk section */
+.gradeLabel {
+  font-size: 10px; color: #333333; font-weight: 600; text-align: center;
+}
+
+/* ── NAVBAR ── */
+.bottomNavbar {
+  position: fixed;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 200px;
+  height: 69px;
+  background-color: #2C2C2C;
+  border-radius: 75px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 48px;
+  z-index: 999;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+}
+.navItem {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  opacity: 0.6;
+}
+.navItem:hover { transform: translateY(-4px); opacity: 1; }
+
+/* ── PANEL OVERLAY ── */
+.overlay {
+  position: fixed; inset: 0;
+  background-color: rgba(0,0,0,0.45);
+  display: flex; align-items: flex-end; justify-content: center;
+  z-index: 500;
+}
+.panel {
+  width: 100%; max-width: 480px;
+  background-color: #F5F4EE;
+  border-radius: 28px 28px 0 0;
+  padding: 28px 24px 56px;
+  box-sizing: border-box;
+  max-height: 88vh; overflow-y: auto;
+  display: flex; flex-direction: column; gap: 14px;
+  animation: panelUp .28s ease-out;
+}
+@keyframes panelUp {
+  from { transform: translateY(100%); opacity: 0; }
+  to   { transform: translateY(0); opacity: 1; }
+}
+.panelTitle { font-size: 20px; font-weight: 700; color: #1A1A1A; letter-spacing: -0.5px; }
+.panelSub { font-size: 13px; color: #A8A8A8; margin-top: -8px; }
+.panelTopRow { display: flex; justify-content: space-between; align-items: flex-start; }
+.panelSmLabel { font-size: 12px; color: #A8A8A8; }
+.panelMonth { font-size: 16px; font-weight: 700; color: #1A1A1A; margin-top: 2px; }
+.btnBack { background: none; border: none; font-size: 20px; color: #555; cursor: pointer; padding: 4px 8px; }
+.sppNominal { font-size: 30px; font-weight: 700; color: #1A1A1A; letter-spacing: -1px; }
+.sppDetailBox {
+  background-color: #EEEEE8; border-radius: 14px;
+  padding: 14px 16px; border: 1px solid #DDDDD7;
+  display: flex; flex-direction: column; gap: 0;
+}
+.sppDetailRow {
+  display: flex; justify-content: space-between;
+  font-size: 13px; color: #555;
+  padding: 7px 0; border-bottom: 1px solid #DDDDD7;
+}
+.sppDetailRow:last-child { border-bottom: none; }
+.sppPayBox {
+  background-color: #EEEEE8; border-radius: 14px;
+  padding: 14px 16px; border: 1px solid #DDDDD7;
+  display: flex; flex-direction: column; gap: 10px;
+}
+.sppPayLabel { font-size: 13px; font-weight: 600; color: #555; }
+.sppPaySelect {
+  width: 100%; height: 40px; border-radius: 10px;
+  border: 1px solid #D9D9D9; background-color: #F5F4EE;
+  color: #555; font-family: inherit; font-size: 13px;
+  padding: 0 12px; outline: none; cursor: pointer;
+}
+.btnBayar {
+  width: 100%; height: 48px;
+  background-color: #3E71A3; border: none; border-radius: 14px;
+  color: #fff; font-size: 16px; font-weight: 600;
+  font-family: inherit; cursor: pointer;
+  transition: background .2s, transform .15s;
+}
+.btnBayar:hover { background-color: #325d88; transform: translateY(-1px); }
+.sppLunasBadge {
+  text-align: center; padding: 12px; background-color: #E8F5E9;
+  border-radius: 12px; color: #4CAF50; font-weight: 600; font-size: 14px;
+}
+.sppListRow {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 13px 0; border-bottom: 1px solid #E8E8E2;
+  cursor: pointer; transition: opacity .15s;
+}
+.sppListRow:last-child { border-bottom: none; }
+.sppListRow:hover { opacity: 0.75; }
+.sppListBulan { font-size: 14px; color: #333; font-weight: 600; }
+.sppListNominal { font-size: 12px; color: #A8A8A8; margin-top: 2px; }
+.badgeLunas { padding: 3px 10px; border-radius: 10px; background-color: #E8F5E9; color: #4CAF50; font-size: 12px; font-weight: 600; }
+.badgeBelum { padding: 3px 10px; border-radius: 10px; background-color: #FFE9E9; color: #E53E3E; font-size: 12px; font-weight: 600; }
+
+/* ── PERKEMBANGAN PANEL ── */
+.perkInfoGrid { display: flex; gap: 8px; flex-wrap: wrap; }
+.perkInfoBox {
+  flex: 1; min-width: 100px;
+  background-color: #EEEEE8; border: 1px solid #DDDDD7;
+  border-radius: 12px; padding: 10px 14px;
+}
+.perkInfoLabel { font-size: 11px; color: #A8A8A8; margin-bottom: 4px; }
+.perkInfoVal { font-size: 14px; font-weight: 600; color: #1A1A1A; }
+.aspekTabs { display: flex; gap: 8px; flex-wrap: wrap; }
+.aspekTab {
+  padding: 6px 14px; border-radius: 20px;
+  border: 1.5px solid #D9D9D9; background-color: transparent;
+  color: #555; font-size: 13px; font-family: inherit; cursor: pointer; transition: all .18s;
+}
+.aspekTabActive { background-color: #3E71A3; border-color: #3E71A3; color: #fff; }
+.aspekGradePill {
+  display: inline-block; padding: 8px 16px; border-radius: 12px;
+  color: #fff; font-size: 14px; font-weight: 600; width: fit-content;
+}
+.aspekImg { width: 100%; border-radius: 12px; object-fit: cover; max-height: 180px; }
+.catatanBox {
+  background-color: #EEEEE8; border: 1px solid #DDDDD7;
+  border-radius: 12px; padding: 14px 16px;
+}
+.catatanLabel { font-size: 11px; color: #A8A8A8; margin-bottom: 6px; }
+.catatanText { font-size: 14px; color: #333; line-height: 1.5; }
+.emptyText { font-size: 14px; color: #A8A8A8; }
+
+/* ── TOAST ── */
+.toast {
+  position: fixed; bottom: 96px; right: 24px;
+  background-color: #4CAF50; color: #fff;
+  padding: 12px 22px; border-radius: 40px; font-size: 13px;
+  z-index: 1000; box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+  animation: toastIn .3s ease; max-width: 280px;
+}
+.toastErr { background-color: #FF4343; }
+@keyframes toastIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── RESPONSIVE ── */
+@media (max-width: 600px) {
+  .scrollArea { padding: 16px 12px 120px; }
+  .topRow { flex-direction: column; }
+  .statusCard { width: 100%; }
+  .childCard { flex-wrap: wrap; }
+  .childCardRight { width: 100%; align-items: flex-end; }
+  .izinTextarea { width: 100%; }
+  .btnAction { width: 94px; }
+  .panel { padding: 22px 16px 60px; }
+  .perkInfoGrid { gap: 6px; }
+}
+
+/* ════════════════════════════════════════
+   SPP PANEL ORTU — sesuai spec
+   ════════════════════════════════════════ */
+
+/* Outer card — fullscreen slide dari bawah */
+.sppOuterCard {
+  width: 100%;
+  max-width: 558px;
+  background-color: #F5F4EE;
+  border-radius: 28px 28px 0 0;
+  padding: 24px 20px 48px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: 92vh;
+  overflow-y: auto;
+  animation: panelUp .28s ease-out;
+}
+.dark .sppOuterCard { background-color: #1E1E1E; }
+
+.sppDetailHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.sppDetailLabel {
+  font-size: 14px; color: #A8A8A8;
+}
+
+.sppNotifDate {
+  font-size: 11px; color: #A8A8A8; margin-top: 2px;
+}
+
+.sppDateBadge {
+  background-color: #E8E8E2;
+  border-radius: 20px;
+  padding: 4px 12px;
+  font-size: 12px; font-weight: 600; color: #555;
+  white-space: nowrap;
+}
+
+/* Kotak atas 558×114 — tapi pakai auto height */
+.sppTopCard {
+  width: 100%;
+  min-height: 114px;
+  background-color: #EEEEE8;
+  border: 1px solid #DDDDD7;
+  border-radius: 30px;
+  padding: 18px 20px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.dark .sppTopCard { background-color: #2A2A2A; border-color: #3A3A3A; }
+
+.sppNominalLabel { font-size: 12px; color: #A8A8A8; }
+.sppNominal { font-size: 30px; font-weight: 700; color: #1A1A1A; letter-spacing: -1px; }
+.dark .sppNominal { color: #F0F0F0; }
+
+/* Inner info card 387×212 */
+.sppInnerCard {
+  width: 387px;
+  max-width: 100%;
+  min-height: 212px;
+  background-color: #EEEEE8;
+  border: 1px solid #DDDDD7;
+  border-radius: 30px;
+  padding: 8px 18px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  align-self: center;
+}
+.dark .sppInnerCard { background-color: #2A2A2A; border-color: #3A3A3A; }
+
+.sppInfoRow {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 9px 0;
+  border-bottom: 1px solid #DDDDD7;
+}
+.sppInfoRow:last-child { border-bottom: none; }
+.dark .sppInfoRow { border-color: #3A3A3A; }
+
+.sppInfoLabel {
+  font-size: 12px; color: #A8A8A8;
+  display: flex; align-items: center;
+}
+
+.sppInfoVal {
+  font-size: 12px; color: #333333; font-weight: 500;
+}
+.dark .sppInfoVal { color: #D0D0D0; }
+
+/* Dropdown card 387×106 */
+.sppPayCard {
+  width: 387px;
+  max-width: 100%;
+  min-height: 106px;
+  background-color: #EEEEE8;
+  border: 1px solid #DDDDD7;
+  border-radius: 30px;
+  padding: 16px 18px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-self: center;
+}
+.dark .sppPayCard { background-color: #2A2A2A; border-color: #3A3A3A; }
+
+.sppPayLabel { font-size: 13px; font-weight: 600; color: #555; }
+.dark .sppPayLabel { color: #D0D0D0; }
+
+.sppPaySelect {
+  width: 100%; height: 40px; border-radius: 12px;
+  border: 1px solid #D9D9D9; background-color: #F5F4EE;
+  color: #555; font-family: inherit; font-size: 13px;
+  padding: 0 12px; outline: none; cursor: pointer;
+}
+.dark .sppPaySelect { background-color: #333; color: #F0F0F0; border-color: #555; }
+
+/* Tombol Bayar biru 387×48 */
+.btnBayarOrtu {
+  width: 387px; height: 48px;
+  max-width: 100%;
+  background-color: #3E71A3;
+  border: none; border-radius: 14px;
+  color: #fff; font-size: 16px; font-weight: 600;
+  font-family: inherit; cursor: pointer;
+  transition: background .2s, transform .15s;
+  align-self: center;
+}
+.btnBayarOrtu:hover { background-color: #325d88; transform: translateY(-1px); }
+
+.sppLunasBadge {
+  text-align: center; padding: 12px;
+  background-color: #E8F5E9; border-radius: 12px;
+  color: #4CAF50; font-weight: 600; font-size: 14px;
+}
+
+.sppBtnBack {
+  background: none; border: none; color: #A8A8A8;
+  font-size: 13px; cursor: pointer; font-family: inherit;
+  padding: 0; transition: color .2s; align-self: flex-start;
+}
+.sppBtnBack:hover { color: #333; }
+.dark .sppBtnBack:hover { color: #F0F0F0; }
+
+.sppPanelTitle {
+  font-size: 20px; font-weight: 700; color: #1A1A1A; letter-spacing: -0.5px;
+}
+.dark .sppPanelTitle { color: #F0F0F0; }

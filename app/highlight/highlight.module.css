@@ -1,0 +1,167 @@
+/* --- LAYOUT UTAMA --- */
+.mainWrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 40px;
+  font-family: 'Stack Sans Headline', sans-serif;
+  min-height: 100vh;
+  background-color: #F8F7F2;
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+  color: #333333;
+}
+
+/* --- PEMBUNGKUS KIRI & KANAN --- */
+.contentRow {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+  justify-content: center;
+  width: 100%;
+}
+
+.leftColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  transition: width 0.3s ease;
+}
+
+/* --- BARIS ATAS --- */
+.topRow {
+  display: flex;
+  gap: 24px;
+  align-items: flex-end;
+}
+
+/* --- KEGIATAN HARI INI --- */
+.kegiatanWrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end; 
+  width: 510px;
+}
+.kegiatanTitle { font-size: 16px; font-weight: normal; color: #333333; margin-bottom: 8px; }
+.kegiatanBox {
+  position: relative; width: 510px; min-height: 136px; background-color: #F8F7F2; border: 1px solid #D9D9D9; border-radius: 18px; padding: 20px 25px 20px 15px; box-sizing: border-box; display: flex; flex-direction: column; gap: 12px;
+}
+.kegiatanRow { display: flex; align-items: center; gap: 8px; }
+.btnMinus { width: 27px; height: 27px; background-color: #FF4343; color: #F8F7F2; border: none; border-radius: 15px; font-size: 20px; display: flex; justify-content: center; align-items: center; cursor: pointer; flex-shrink: 0; line-height: 1; }
+.inputKegiatan { width: 363px; height: 28px; background-color: #E8E8E8; border: none; border-radius: 15px; padding: 0 15px; color: #333333; font-family: inherit; font-size: 13px; outline: none; flex-shrink: 1; }
+.inputKegiatan::placeholder { color: #A8A8A8; }
+.inputWaktu { width: 111px; height: 30px; background-color: #F8F7F2; border: 1px solid #D9D9D9; border-radius: 15px; padding: 0 10px; color: #333333; font-family: inherit; font-size: 13px; outline: none; flex-shrink: 0; text-align: center; }
+.btnPlus { position: absolute; right: -13.5px; top: 50%; transform: translateY(-50%); width: 27px; height: 27px; background-color: #F3C51C; color: #333333; border: none; border-radius: 15px; font-size: 20px; display: flex; justify-content: center; align-items: center; cursor: pointer; box-shadow: 2px 2px 5px rgba(0,0,0,0.1); line-height: 1; }
+
+/* --- STATUS ABSEN --- */
+.absenBox { width: 620px; height: 136px; background-color: #F8F7F2; border: 1px solid #D9D9D9; border-radius: 18px; padding: 20px; box-sizing: border-box; display: flex; justify-content: space-between; align-items: center; }
+.absenLeft { display: flex; flex-direction: column; gap: 12px; max-width: 300px; }
+.absenHeader { display: flex; align-items: center; gap: 10px; }
+.absenDot { width: 10px; height: 10px; border-radius: 50%; }
+.absenDot.red { background-color: #FF4C4C; }
+.absenDot.green { background-color: #4CAF50; }
+.absenTitle { font-size: 16px; color: #333333; font-weight: normal; }
+.absenSubtext { font-size: 14px; color: #A8A8A8; line-height: 1.4; font-weight: normal; }
+.btnScanQR { width: 95px; height: 95px; background-color: #FFB843; border-radius: 15px; border: none; cursor: pointer; display: flex; justify-content: center; align-items: center; transition: transform 0.2s; flex-shrink: 0; }
+.btnScanQR:hover { transform: scale(1.05); }
+
+/* --- KOTAK HIGHLIGHT SISWA (CARD BESAR) --- */
+.container { width: 1155px; background-color: #F8F7F2; border: 1px solid #A8A8A8; border-radius: 24px; padding: 30px; box-sizing: border-box; transition: width 0.3s ease; }
+.container.shrink { width: 785px; } 
+
+.headerRow { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+.headerLeft { display: flex; align-items: center; gap: 15px; }
+.headerRight { display: flex; flex-direction: column; align-items: flex-end; gap: 10px; }
+.titleText { font-size: 20px; font-weight: bold; color: #333333; }
+.dropdownFilter { height: 29px; border-radius: 15px; border: 1px solid #D9D9D9; background-color: #F8F7F2; color: #333333; padding: 0 10px; font-family: inherit; font-size: 13px; font-weight: 600; outline: none; cursor: pointer; }
+.dateInput { width: 130px; }
+
+.grid { display: grid; grid-template-columns: repeat(3, 355px); gap: 15px; }
+.container.shrink .grid { grid-template-columns: repeat(2, 355px); }
+
+/* --- KOTAK SISWA --- */
+.card { width: 355px; height: 147px; background-color: #F8F7F2; border: 1px solid #A8A8A8; border-radius: 21px; display: flex; padding: 15px; box-sizing: border-box; gap: 15px; transition: all 0.2s ease; cursor: pointer; }
+.card:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
+.imageBox { width: 100px; height: 90px; background-color: #E8E8E8; border-radius: 15px; display: flex; justify-content: center; align-items: center; overflow: hidden; flex-shrink: 0; }
+.infoArea { display: flex; flex-direction: column; justify-content: space-between; width: 100%; }
+.studentName { font-size: 18px; font-weight: bold; color: #333333; margin-top: 5px; }
+.statusLabel { font-size: 11px; font-weight: bold; color: #666666; margin-bottom: 4px; }
+.actionRow { display: flex; align-items: center; gap: 10px; }
+.dropdownAbsen { width: 103px; height: 29px; border-radius: 15px; border: 1px solid #D9D9D9; background-color: #F8F7F2; color: #333333; font-family: inherit; font-size: 13px; font-weight: 600; padding: 0 10px; outline: none; }
+.dropdownAbsen:disabled { opacity: 0.6; cursor: not-allowed; }
+.btnNilai { width: 77px; height: 27px; background-color: #FFB843; border: 1px solid #D88C0F; border-radius: 15px; color: #333333; font-size: 13px; font-weight: bold; cursor: pointer; font-family: inherit; display: flex; justify-content: center; align-items: center; }
+.btnNilai:hover { background-color: #e5a53c; }
+
+/* ========================================= */
+/* CARD PENILAIAN (RAPOR)                    */
+/* ========================================= */
+.penilaianCard { width: 346px; min-height: 713px; background-color: #F8F7F2; border-radius: 0 0 30px 30px; padding: 23px; box-sizing: border-box; display: flex; flex-direction: column; box-shadow: -5px 10px 30px rgba(0,0,0,0.05); animation: slideIn 0.3s ease-out forwards; }
+.penilaianCard * { font-weight: normal; }
+
+@keyframes slideIn { from { opacity: 0; transform: translateX(-20px); } to { opacity: 1; transform: translateX(0); } }
+
+.penilaianHeader { display: flex; gap: 12px; margin-bottom: 28px; }
+.penilaianImgBox { width: 180.82px; height: 166.97px; background-color: #E8E8E8; border-radius: 15px; display: flex; justify-content: center; align-items: center; flex-shrink: 0; overflow: hidden; }
+.penilaianInfo { display: flex; flex-direction: column; justify-content: flex-start; padding-top: 10px; }
+.penilaianName { font-size: 1.1rem; color: #333333; margin-bottom: 10px; line-height: 1.2; }
+.kalender { width: 82.73px; height: 23.29px; background-color: #F8F7F2; border: 1px solid #ECECEC; border-radius: 15px; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #666; }
+
+.barDropdowns { width: 300px; height: 31.5px; display: flex; gap: 6px; margin-bottom: 20px; }
+.dropdownItem { background-color: #F8F7F2; border: 1px solid #DCDCDC; border-radius: 10px; font-family: inherit; font-size: 11px; color: #333333; padding: 0 5px; outline: none; }
+.dropdownAspek { width: 77.25px; } .dropdownTahun { width: 96.75px; } .dropdownFase { width: 96.75px; }
+
+.barTentangAnak { width: 300px; height: 51.75px; background-color: #F8F7F2; border: 1px solid #ECECEC; border-radius: 10px; display: flex; align-items: center; padding: 0 13.5px; gap: 21px; margin-bottom: 20px; box-sizing: border-box; }
+.inputBBTB { width: 126px; height: 29px; background-color: #F8F7F2; border: 1px solid #ECECEC; border-radius: 10px; padding: 0 10px; font-family: inherit; font-size: 12px; color: #333; outline: none; box-sizing: border-box; }
+.inputBBTB::placeholder { color: #A8A8A8; }
+
+.kotakPenilaian { width: 300px; height: 123px; background-color: #F8F7F2; border: 1px solid #ECECEC; border-radius: 10px; display: flex; align-items: center; justify-content: space-between; padding: 15px; margin-bottom: 20px; box-sizing: border-box; }
+.radioGroup { display: flex; flex-direction: column; gap: 8px; }
+.radioLabel { font-size: 11px; color: #333; display: flex; align-items: center; gap: 6px; cursor: pointer; }
+
+.btnUpload { width: 74.25px; height: 93px; background-color: #FFB843; border-radius: 10px; display: flex; justify-content: center; align-items: center; cursor: pointer; overflow: hidden; position: relative; }
+.btnUpload img { width: 100%; height: 100%; object-fit: cover; } 
+
+/* Tombol X (Hapus Foto) */
+.btnRemoveImage {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 20px;
+  height: 20px;
+  background-color: rgba(255, 67, 67, 0.9); /* Merah sedikit transparan */
+  color: white;
+  border: none;
+  border-radius: 50%;
+  font-size: 10px;
+  font-weight: bold;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  z-index: 10;
+  transition: transform 0.2s;
+}
+.btnRemoveImage:hover {
+  transform: scale(1.1);
+  background-color: #FF4343;
+}
+
+.textareaCatatan { width: 300px; height: 96px; background-color: #E8E8E8; border: 1px solid #D9D9D9; border-radius: 10px; padding: 12px; font-family: inherit; font-size: 12px; color: #333; resize: none; outline: none; margin-bottom: auto; box-sizing: border-box; }
+.textareaCatatan::placeholder { color: #A8A8A8; }
+.btnSimpan { width: 300px; height: 43px; background-color: #333333; color: #F8F7F2; font-size: 14px; border: none; border-radius: 10px; cursor: pointer; font-family: inherit; transition: background 0.2s; margin-top: 20px; box-sizing: border-box; }
+.btnSimpan:hover { background-color: #555; }
+
+/* --- NAVBAR & TOAST & MODAL --- */
+.bottomNavbar { position: fixed; bottom: 40px; left: 50%; transform: translateX(-50%); width: 339px; height: 69px; background-color: #2C2C2C; border-radius: 75px; display: flex; justify-content: center; align-items: center; gap: 48px; z-index: 999; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2); }
+.navItem { display: flex; justify-content: center; align-items: center; cursor: pointer; transition: all 0.2s ease-in-out; opacity: 0.6; }
+.navItem:hover { transform: translateY(-4px); opacity: 1; }
+.toast { position: fixed; bottom: 120px; right: 30px; background-color: #4CAF50; color: white; padding: 15px 30px; border-radius: 50px; font-size: 14px; z-index: 1000; animation: slideUp 0.3s ease forwards; }
+.toast.error { background-color: #FF4343; }
+@keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+.cameraModal { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background-color: rgba(0, 0, 0, 0.85); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 3000; }
+.videoContainer { width: 300px; height: 300px; border-radius: 24px; overflow: hidden; border: 4px solid #F3C51C; position: relative; }
+.videoContainer video { width: 100%; height: 100%; object-fit: cover; }
+.scanOverlayText { color: white; margin-bottom: 20px; font-size: 18px; }
+.btnCancelScan { margin-top: 30px; padding: 12px 30px; background-color: #FF4343; color: white; border: none; border-radius: 50px; cursor: pointer; font-family: inherit; }

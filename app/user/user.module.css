@@ -1,0 +1,228 @@
+/* userguru.module.css — User Profile Page (Guru & Ortu) */
+
+.page {
+  min-height: 100vh;
+  background-color: #F8F7F2;
+  background-image: './gradortu.png';
+  font-family: 'Stack Sans Headline', sans-serif;
+  color: #333333;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── DARK ── */
+.dark { background-color: #0F0F0F; color: #F0F0F0; }
+.dark .content { /* no change needed, inputs handle */ }
+.dark .label { color: #A8A8A8; }
+.dark .input {
+  background-color: #1E1E1E;
+  border-color: #2E2E2E;
+  color: #F0F0F0;
+}
+.dark .input::placeholder { color: #555; }
+.dark .inputWrapper { background-color: #1E1E1E; border-color: #2E2E2E; }
+.dark .avatarCircle { background-color: #2A2A2A; }
+.dark .navbar { background-color: #1E1E1E; }
+.dark .btnBack { color: #F0F0F0; }
+.dark .pageTitle { color: #F0F0F0; }
+
+/* ── HEADER ROW ── */
+.headerRow {
+  display: flex;
+  align-items: center;
+  padding: 24px 28px 0;
+  gap: 12px;
+}
+.btnBack {
+  background: none; border: none; cursor: pointer;
+  color: #333333; padding: 4px;
+  display: flex; align-items: center;
+  transition: opacity .2s;
+}
+.btnBack:hover { opacity: 0.6; }
+.headerSpacer { flex: 1; }
+
+/* ── CONTENT ── */
+.content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 32px 28px 120px;
+  max-width: 500px;
+  width: 100%;
+  margin: 0 auto;
+  box-sizing: border-box;
+  gap: 20px;
+}
+
+/* Top: title kiri, avatar kanan */
+.topSection {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.pageTitle {
+  font-size: 32px;
+  font-weight: 700;
+  color: #333333;
+  letter-spacing: -1px;
+}
+
+/* Avatar */
+.avatarWrap {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+}
+
+.avatarCircle {
+  width: 72px; height: 72px;
+  border-radius: 50%;
+  background-color: #E8E8E8;
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden;
+}
+
+.avatarEditBtn {
+  position: absolute;
+  bottom: -4px; right: -4px;
+  width: 26px; height: 26px;
+  border-radius: 50%;
+  background-color: #F8F7F2;
+  border: 1.5px solid #D9D9D9;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  transition: background .2s;
+}
+.avatarEditBtn:hover { background-color: #EEEEE8; }
+
+/* ── FORM ── */
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.label {
+  font-size: 13px;
+  color: #555555;
+  font-weight: 400;
+}
+
+/* Input wrapper — border di wrapper bukan di input */
+.inputWrapper {
+  display: flex;
+  align-items: center;
+  background-color: #FFFFFF;
+  border: 1.5px solid #E0E0E0;
+  border-radius: 14px;
+  padding: 0 14px;
+  height: 52px;
+  box-sizing: border-box;
+  transition: border-color .2s;
+}
+.inputWrapper:focus-within { border-color: #F3C51C; }
+
+.input {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-family: inherit;
+  font-size: 15px;
+  color: #333333;
+}
+.input::placeholder { color: #A8A8A8; }
+
+.inputDate {
+  cursor: pointer;
+}
+/* hide native calendar icon */
+.inputDate::-webkit-calendar-picker-indicator { opacity: 0; position: absolute; right: 0; width: 40px; height: 40px; cursor: pointer; }
+
+.inputIconBtn {
+  background: none; border: none; cursor: pointer;
+  padding: 4px; display: flex; align-items: center;
+  opacity: 0.7; transition: opacity .2s; flex-shrink: 0;
+}
+.inputIconBtn:hover { opacity: 1; }
+
+.inputIconStatic {
+  display: flex; align-items: center;
+  opacity: 0.6; flex-shrink: 0;
+  pointer-events: none;
+}
+
+/* ── TOMBOL SIMPAN ── */
+.btnSimpan {
+  width: 100%;
+  height: 52px;
+  border: none;
+  border-radius: 50px;
+  font-size: 16px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: opacity .2s, transform .15s;
+  margin-top: 8px;
+}
+.btnSimpan:hover { opacity: 0.88; transform: translateY(-1px); }
+
+/* Guru — kuning */
+.btnGuru { background-color: #F3C51C; color: #1A1A1A; }
+
+/* Ortu — biru */
+.btnOrtu { background-color: #3E71A3; color: #F8F7F2; }
+
+/* ── NAVBAR — sama persis navbar guru ── */
+.bottomNavbar {
+  position: fixed;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 339px;
+  height: 69px;
+  background-color: #2C2C2C;
+  border-radius: 75px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 48px;
+  z-index: 999;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+}
+.navItem {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  opacity: 0.6;
+}
+.navItem:hover { transform: translateY(-4px); opacity: 1; }
+.navActive { opacity: 1; }
+
+/* ── TOAST ── */
+.toast {
+  position: fixed; bottom: 100px; right: 24px;
+  background-color: #4CAF50; color: #fff;
+  padding: 12px 22px; border-radius: 40px;
+  font-size: 13px; z-index: 1000;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+  animation: toastIn .3s ease; max-width: 300px;
+}
+.toastErr { background-color: #FF4343; }
+@keyframes toastIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── RESPONSIVE ── */
+@media (max-width: 600px) {
+  .content { padding: 24px 20px 120px; }
+  .pageTitle { font-size: 26px; }
+  .navbar { width: calc(100% - 40px); max-width: 300px; }
+}
