@@ -1,0 +1,560 @@
+/* laporan.module.css */
+
+.page {
+  min-height: 100vh;
+  background-color: #F8F7F2;
+  font-family: 'Stack Sans Headline', sans-serif;
+  color: #333333;
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 100px;
+}
+.dark { background-color: #0F0F0F; color: #F0F0F0; }
+
+/* ── CONTENT WRAP — main card + detail side by side ── */
+.contentWrap {
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+  padding: 32px 32px 0;
+  box-sizing: border-box;
+}
+
+/* ══════════════════════════════════════
+   MAIN CARD — 757×713px, r30, bg #F8F7F2
+══════════════════════════════════════ */
+.mainCard {
+  width: 757px;
+  min-height: 713px;
+  background-color: #F8F7F2;
+  border: 1.5px solid #E8E8E8;
+  border-radius: 30px;
+  padding: 24px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  flex-shrink: 0;
+}
+.dark .mainCard { background-color: #1E1E1E; border-color: #2E2E2E; }
+
+.mainCardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.mainCardTitle {
+  font-size: 18px;
+  font-weight: 700;
+  color: #333333;
+}
+.dark .mainCardTitle { color: #F0F0F0; }
+
+.selectKelas {
+  height: 36px;
+  padding: 0 32px 0 14px;
+  border: 1.5px solid #D9D9D9;
+  border-radius: 20px;
+  background-color: #F8F7F2;
+  color: #333;
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg width='16' height='16' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M6 9l6 6 6-6' stroke='%23A8A8A8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+}
+.dark .selectKelas { background-color: #2A2A2A; border-color: #3A3A3A; color: #F0F0F0; }
+
+/* Grid siswa — 2 kolom */
+.siswaGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+/* ── SISWA CARD — horizontal: foto kiri, info kanan ── */
+.siswaCard {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Row atas: foto + highlight berdampingan */
+.siswaCardTop {
+  display: flex;
+  flex-direction: row;
+  gap: 0;
+  align-items: stretch;
+}
+
+/* Foto siswa 130×130, r15 kiri saja */
+.siswaFoto {
+  width: 130px;
+  height: 130px;
+  border-radius: 15px;
+  margin-right: 8px;
+  background-color: #E8E8E8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.dark .siswaFoto { background-color: #2A2A2A; }
+
+/* Highlight nilai 187×130, r8 kanan saja */
+.highlightCard {
+  width: 187px;
+  min-height: 130px;
+  background-color: #2C2C2C;
+  border-radius: 15px;
+  padding: 10px 12px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.dark .highlightCard { background-color: #1A1A1A; }
+
+.highlightName {
+  font-size: 13px;
+  font-weight: 700;
+  color: #F8F7F2;
+  line-height: 1.3;
+}
+
+.highlightAspek {
+  font-size: 11px;
+  color: #A8A8A8;
+}
+
+/* Grade squares 34×34 */
+.gradeRow {
+  display: flex;
+  gap: 6px;
+  align-items: flex-start;
+}
+
+.gradeCell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+
+.gradeSquare {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  color: #F8F7F2;
+}
+
+.gradeKey {
+  font-size: 9px;
+  color: #A8A8A8;
+  font-weight: 600;
+}
+
+/* Aspek kurang 323×41 */
+.aspekKurangRow {
+  width: 323px;
+  max-width: 100%;
+  height: 41px;
+  background-color: #F8F7F2;
+  border: 1.5px solid #D9D9D9;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  padding: 0 14px;
+  gap: 8px;
+  box-sizing: border-box;
+}
+.dark .aspekKurangRow { background-color: #1E1E1E; border-color: #2E2E2E; }
+
+.aspekKurangLabel {
+  font-size: 12px;
+  color: #A8A8A8;
+  flex: 1;
+}
+
+.aspekKurangVal {
+  font-size: 13px;
+  font-weight: 600;
+  color: #333;
+}
+.dark .aspekKurangVal { color: #F0F0F0; }
+
+/* Foto kegiatan row — 35×35 setiap foto */
+.kegiatanFotoRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.kegiatanFotoBox {
+  width: 35px;
+  height: 35px;
+  border-radius: 8px;
+  background-color: #E8E8E8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.dark .kegiatanFotoBox { background-color: #2A2A2A; }
+
+.kegiatanFotoImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Shortcut unduh 52×35 */
+.btnUnduhShortcut {
+  width: 52px;
+  height: 35px;
+  border-radius: 8px;
+  background-color: #E8E8E8;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background .2s;
+  flex-shrink: 0;
+}
+.btnUnduhShortcut:hover { background-color: #D9D9D9; }
+.dark .btnUnduhShortcut { background-color: #2A2A2A; }
+.dark .btnUnduhShortcut:hover { background-color: #333; }
+
+/* Tombol lihat selengkapnya 146×33 */
+.horizontal {
+display: flex;
+flex-direction: row;
+}
+
+.btnLihat {
+  width: 146px;
+  height: 33px;
+  background-color: #FFB843;
+  border: none;
+  border-radius: 30px;
+  color: #1A1A1A;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: opacity .2s;
+}
+.btnLihat:hover { opacity: 0.85; }
+
+/* ══════════════════════════════════════
+   DETAIL CARD — 289×614px, r30
+══════════════════════════════════════ */
+.detailCard {
+  width: 289px;
+  min-height: 614px;
+  background-color: #F8F7F2;
+  border: 1.5px solid #E8E8E8;
+  border-radius: 30px;
+  padding: 20px 18px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex-shrink: 0;
+  animation: slideIn .25s ease;
+}
+.dark .detailCard { background-color: #1E1E1E; border-color: #2E2E2E; }
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(16px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+/* Foto siswa detail 130×130, r15 */
+.detailFotoBox {
+  width: 130px;
+  height: 130px;
+  border-radius: 15px;
+  background-color: #E8E8E8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  align-self: center;
+}
+.dark .detailFotoBox { background-color: #2A2A2A; }
+
+.detailName {
+  font-size: 15px;
+  font-weight: 700;
+  color: #333;
+  text-align: center;
+}
+.dark .detailName { color: #F0F0F0; }
+
+.detailKelas {
+  font-size: 12px;
+  color: #A8A8A8;
+  text-align: center;
+  margin-top: -6px;
+}
+
+/* Kegiatan section */
+.detailSection {}
+
+.detailSectionLabel {
+  font-size: 13px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 8px;
+}
+.dark .detailSectionLabel { color: #D0D0D0; }
+
+/* Grid kegiatan — 2 kolom, foto 120×114 */
+.detailKegiatanGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+.detailKegiatanBox {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.detailKegiatanImg {
+  width: 120px;
+  height: 114px;
+  max-width: 100%;
+  border-radius: 8px;
+  object-fit: cover;
+  background-color: #E8E8E8;
+}
+
+.detailKegiatanNama {
+  font-size: 11px;
+  font-weight: 600;
+  color: #333;
+  line-height: 1.2;
+}
+.dark .detailKegiatanNama { color: #D0D0D0; }
+
+.detailKegiatanTgl {
+  font-size: 10px;
+  color: #A8A8A8;
+}
+
+.detailKegiatanEmpty {
+  font-size: 12px;
+  color: #A8A8A8;
+  grid-column: span 2;
+  text-align: center;
+  padding: 12px 0;
+}
+
+/* Placeholder foto kegiatan */
+.detailKegiatanImgBox {
+  width: 120px;
+  height: 114px;
+  border-radius: 8px;
+  background-color: #E8E8E8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.dark .detailKegiatanImgBox { background-color: #2A2A2A; }
+
+/* Dropdown row — aspek 250×39 + tahun 113×25 */
+.detailDropdownRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+/* Dropdown aspek 250×39.69, r15 */
+.dropdownAspek {
+  width: 150px;
+  height: 39px;
+  border: 1.5px solid #D9D9D9;
+  border-radius: 15px;
+  background-color: #F8F7F2;
+  color: #333;
+  font-size: 13px;
+  font-family: inherit;
+  padding: 0 10px;
+  outline: none;
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg width='14' height='14' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M6 9l6 6 6-6' stroke='%23A8A8A8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+}
+.dark .dropdownAspek { background-color: #2A2A2A; border-color: #3A3A3A; color: #F0F0F0; }
+
+/* Dropdown tahun 113×25.53 */
+.dropdownTahun {
+  width: 113px;
+  height: 26px;
+  border: 1.5px solid #D9D9D9;
+  border-radius: 13px;
+  background-color: #F8F7F2;
+  color: #333;
+  font-size: 11px;
+  font-family: inherit;
+  padding: 0 8px;
+  outline: none;
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg width='12' height='12' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M6 9l6 6 6-6' stroke='%23A8A8A8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 6px center;
+}
+.dark .dropdownTahun { background-color: #2A2A2A; border-color: #3A3A3A; color: #F0F0F0; }
+
+/* Kotak nilai 62×24, warna sesuai grade */
+.nilaiBox {
+  width: 62px;
+  height: 24px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: #F8F7F2;
+}
+
+/* Catatan guru 250×115, bg #E8E8E8 stroke D9D9D9 */
+.catatanBox {
+  width: 100%;
+  min-height: 115px;
+  background-color: #E8E8E8;
+  border: 1.5px solid #D9D9D9;
+  border-radius: 12px;
+  padding: 12px 14px;
+  box-sizing: border-box;
+}
+.dark .catatanBox { background-color: #2A2A2A; border-color: #3A3A3A; }
+
+.catatanText {
+  font-size: 12px;
+  color: #555;
+  line-height: 1.5;
+}
+.dark .catatanText { color: #A8A8A8; }
+
+/* Tombol actions — 124×37 each */
+.detailActions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+/* Unduh PDF 124×37, stroke #D9D9D9 */
+.btnUnduhPDF {
+  width: 124px;
+  height: 37px;
+  background-color: transparent;
+  border: 1.5px solid #D9D9D9;
+  border-radius: 30px;
+  color: #333;
+  font-size: 12px;
+  font-family: inherit;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: border-color .2s, background .2s;
+}
+.btnUnduhPDF:hover { background-color: #F0EFE9; border-color: #A8A8A8; }
+.dark .btnUnduhPDF { border-color: #3A3A3A; color: #D0D0D0; }
+
+/* Selesai 124×37, bg #FFB843 */
+.btnSelesai {
+  width: 124px;
+  height: 37px;
+  background-color: #FFB843;
+  border: none;
+  border-radius: 30px;
+  color: #1A1A1A;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: opacity .2s;
+}
+.btnSelesai:hover { opacity: 0.85; }
+
+/* ── NAVBAR ── */
+.bottomNavbar {
+  position: fixed;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 339px;
+  height: 69px;
+  background-color: #2C2C2C;
+  border-radius: 75px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 48px;
+  z-index: 999;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+}
+.dark .bottomNavbar { background-color: #1E1E1E; }
+
+.navItem {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  opacity: 0.6;
+}
+.navItem:hover { transform: translateY(-4px); opacity: 1; }
+
+/* ── TOAST ── */
+.toast {
+  position: fixed;
+  bottom: 100px; right: 24px;
+  background-color: #4CAF50; color: #fff;
+  padding: 12px 22px; border-radius: 40px;
+  font-size: 13px; z-index: 1000;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+  animation: toastIn .3s ease; max-width: 300px;
+}
+.toastErr { background-color: #FF4343; }
+@keyframes toastIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── RESPONSIVE ── */
+@media (max-width: 1100px) {
+  .contentWrap { flex-direction: column; padding: 20px 16px 0; }
+  .mainCard { width: 100%; }
+  .siswaGrid { grid-template-columns: 1fr; }
+  .detailCard { width: 100%; }
+}
+
+@media (max-width: 600px) {
+  .contentWrap { padding: 16px 12px 0; }
+  .highlightCard { width: 100%; }
+  .aspekKurangRow { width: 100%; }
+}
