@@ -44,7 +44,7 @@
 .btnClear:hover { color: #E53E3E; }
 
 .content {
-  padding: 16px 24px 48px;
+  padding: 16px 24px 100px;
   display: flex; flex-direction: column; gap: 12px;
   max-width: 680px; margin: 0 auto;
 }
@@ -58,8 +58,8 @@
 .notifCard {
   position: relative;
   display: flex; gap: 14px; align-items: flex-start;
-  background-color: #FFFFFF;
-  border: 1px solid #E8E8E8;
+  background-color: #F8F7F2;
+  border: 1px solid #D9D9D9;
   border-radius: 16px;
   padding: 16px;
   transition: background .15s;
@@ -90,11 +90,13 @@
 .notifName { font-weight: 700; }
 
 .tagIzin {
-  display: inline-block; background-color: #EEF3FF; color: #3E71A3;
+  display: inline-block; background-color: #F8F7F2; color: #3E71A3;
+  border: 1px solid #D9D9D9;
   font-size: 11px; font-weight: 600; border-radius: 6px; padding: 1px 7px; margin: 0 2px;
 }
 .tagSakit {
-  display: inline-block; background-color: #FFF4DC; color: #A06B00;
+  display: inline-block; background-color: #F8F7F2; color: #A06B00;
+  border: 1px solid #D9D9D9;
   font-size: 11px; font-weight: 600; border-radius: 6px; padding: 1px 7px; margin: 0 2px;
 }
 
@@ -144,3 +146,33 @@
   from { opacity: 0; transform: translateY(10px); }
   to   { opacity: 1; transform: translateY(0); }
 }
+
+/* ── NAVBAR ── */
+.bottomNavbar {
+  position: fixed;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 339px;
+  height: 69px;
+  background-color: #2C2C2C;
+  border-radius: 75px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 48px;
+  z-index: 999;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+}
+.dark .bottomNavbar { background-color: #1E1E1E; }
+
+.navItem {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  opacity: 0.6;
+}
+.navItem:hover { transform: translateY(-4px); opacity: 1; }
+.navActive { opacity: 1 !important; }

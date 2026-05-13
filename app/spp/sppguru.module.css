@@ -1,178 +1,371 @@
 /* sppguru.module.css */
 
-.overlay {
-  position: fixed; inset: 0;
-  background-color: rgba(0,0,0,0.45);
-  display: flex; align-items: center; justify-content: center;
-  z-index: 800;
-  padding: 24px;
+.page {
+  min-height: 100vh;
+  background-color: #F8F7F2;
+  font-family: 'Stack Sans Headline', sans-serif;
+  color: #333333;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.dark { background-color: #0F0F0F; color: #F0F0F0; }
+
+/* ── CONTENT ── */
+.content {
+  flex: 1;
+  width: 100%;
+  max-width: 480px;
+  padding: 40px 24px 120px;
   box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
 }
 
-/* Outer card — 423×320px, r30, bg #A8A8A8 (abu) */
+/* ── LIST HEADER ── */
+.listHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.pageTitle {
+  font-size: 24px;
+  font-weight: 700;
+  color: #333333;
+  letter-spacing: -0.5px;
+}
+.dark .pageTitle { color: #F0F0F0; }
+
+.listHeaderRight {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.payBadge {
+  background-color: #FFB843; color: #1A1A1A;
+  border: none; border-radius: 20px;
+  font-size: 11px; font-weight: 600;
+  padding: 4px 12px; cursor: pointer; font-family: inherit;
+  transition: opacity .2s;
+}
+.payBadge:hover { opacity: 0.85; }
+
+.filterBtn {
+  height: 30px; padding: 0 14px;
+  background-color: #EEEEE8;
+  border: 1.5px solid #D9D9D9; border-radius: 15px;
+  color: #333333; font-size: 12px; font-family: inherit; cursor: pointer;
+  transition: all .2s;
+}
+.filterBtn:hover { border-color: #A8A8A8; }
+.filterActive { background-color: #2C2C2C; border-color: #2C2C2C; color: #F8F7F2; }
+.dark .filterBtn { background-color: #2A2A2A; border-color: #3A3A3A; color: #D0D0D0; }
+
+/* ── BACK BUTTON ── */
+.btnBack {
+  display: flex; align-items: center; gap: 8px;
+  background: none; border: none; cursor: pointer;
+  font-size: 14px; color: #555; font-family: inherit;
+  transition: color .2s; padding: 0;
+}
+.btnBack:hover { color: #333; }
+.dark .btnBack { color: #A8A8A8; }
+.dark .btnBack:hover { color: #F0F0F0; }
+
+/* ══════════════════════════════════════
+   OUTER CARD — 423×320px, r30, bg #A8A8A8
+═══════════════════════════════════════ */
 .outerCard {
   width: 423px;
+  max-width: 100%;
   min-height: 320px;
-  background-color: #A8A8A8;
+  background-color: #F8F7F2;
+   border: 1.5px solid #bebebe;
   border-radius: 30px;
   padding: 20px;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  position: relative;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.25);
-}
-
-.dark .outerCard { background-color: #2A2A2A; }
-
-/* Header */
-.header {
-  display: flex; justify-content: space-between; align-items: center; gap: 8px;
-}
-.headerLeft { display: flex; align-items: center; gap: 10px; }
-.headerRight { display: flex; align-items: center; gap: 8px; }
-
-.title { font-size: 14px; font-weight: 700; color: #F8F7F2; }
-.dark .title { color: #F0F0F0; }
-
-.payNotifBadge {
-  background-color: #FFB843; color: #1A1A1A;
-  border: none; border-radius: 20px;
-  font-size: 11px; font-weight: 600;
-  padding: 3px 10px; cursor: pointer;
-  font-family: inherit;
-  transition: opacity .2s;
-}
-.payNotifBadge:hover { opacity: 0.85; }
-
-.filterBtn {
-  height: 26px; padding: 0 12px;
-  background-color: rgba(255,255,255,0.15); border: none;
-  border-radius: 13px; color: #F8F7F2;
-  font-size: 11px; font-family: inherit; cursor: pointer;
-  transition: background .2s;
-}
-.filterBtn:hover, .filterActive { background-color: rgba(255,255,255,0.3); }
-
-.btnClose {
-  width: 26px; height: 26px; border-radius: 50%;
-  background-color: rgba(255,255,255,0.15); border: none;
-  color: #F8F7F2; font-size: 14px; cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
-  transition: background .2s;
-}
-.btnClose:hover { background-color: rgba(255,255,255,0.3); }
-
-/* ── LIST ── */
-.listWrap {
-  display: flex; flex-direction: column; gap: 8px;
-  max-height: 260px; overflow-y: auto;
-}
-.listRow {
-  display: flex; justify-content: space-between; align-items: center;
-  background-color: #F8F7F2; border-radius: 14px;
-  padding: 12px 16px; cursor: pointer;
-  transition: opacity .15s;
-}
-.listRow:hover { opacity: 0.88; }
-.dark .listRow { background-color: #1E1E1E; }
-
-.listLeft { display: flex; flex-direction: column; gap: 2px; }
-.listName { font-size: 14px; font-weight: 600; color: #333; }
-.dark .listName { color: #F0F0F0; }
-.listBulan { font-size: 12px; color: #A8A8A8; }
-
-.listRight { display: flex; align-items: center; gap: 8px; }
-.chevron { color: #A8A8A8; font-size: 18px; }
-
-.badgeLunas { padding: 3px 10px; border-radius: 10px; background-color: #E8F5E9; color: #4CAF50; font-size: 11px; font-weight: 600; }
-.badgeBelum { padding: 3px 10px; border-radius: 10px; background-color: #FFE9E9; color: #E53E3E; font-size: 11px; font-weight: 600; }
-
-.empty { text-align: center; color: #F8F7F2; font-size: 14px; padding: 24px 0; }
-
-/* ── DETAIL ── */
-.detailWrap { display: flex; flex-direction: column; gap: 12px; }
-
-.btnBack {
-  background: none; border: none; color: #F8F7F2; font-size: 13px;
-  cursor: pointer; font-family: inherit; padding: 0; transition: opacity .2s;
-}
-.btnBack:hover { opacity: 0.7; }
-
-/* Big card — 387×... (auto height), r30, bg #A8A8A8 */
-.bigCard {
-  width: 387px;
-  background-color: #BEBEBE;
-  border-radius: 30px;
-  padding: 16px;
-  box-sizing: border-box;
-  display: flex; flex-direction: column; gap: 10px;
+  gap: 12px;
   align-self: center;
 }
-.dark .bigCard { background-color: #222; }
+.dark .outerCard { 
+  background-color: #1E1E1E;
+   border: 1.5px solid #292929;
+  ; }
 
-.bigCardTitle { font-size: 14px; color: #F8F7F2; font-weight: 400; }
-.bigCardNominal { font-size: 30px; font-weight: 700; color: #F8F7F2; letter-spacing: -1px; }
+.outerCardTop {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
 
-/* Inner card — 387×212px (auto), r16, bg #F8F7F2 */
+.outerCardLabel {
+  font-size: 14px;
+  color: #333333;
+  font-weight: 400;
+  margin-left: 20px;
+}
+
+.outerCardNominal {
+  font-size: 30px;
+  font-weight: 600;
+  color: #333333;
+  letter-spacing: -1px;
+  margin-left: 20px;
+}
+
+.dark .outerCardLabel {
+  color: #F8F7F2;
+}
+
+.dark .outerCardNominal {
+  color: #F8F7F2;
+}
+/* ══════════════════════════════════════
+   INNER CARD — 387×212px, bg #F8F7F2
+═══════════════════════════════════════ */
 .innerCard {
-  width: 100%;
+  width: 387px;
+  max-width: 100%;
   min-height: 212px;
   background-color: #F8F7F2;
-  border-radius: 16px;
-  padding: 14px 16px;
+  border-radius: 30px;
+  padding: 8px 16px;
   box-sizing: border-box;
-  display: flex; flex-direction: column;
+  display: flex;
+  flex-direction: column;
   justify-content: space-around;
-  gap: 0;
 }
-.dark .innerCard { background-color: #1E1E1E; }
+.dark .innerCard { background-color: #2A2A2A; }
 
 .infoRow {
-  display: flex; justify-content: space-between; align-items: center;
-  padding: 9px 0;
-  border-bottom: 1px solid #F0EFE9;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-bottom: 1px solid #EBEBEB;
 }
 .infoRow:last-child { border-bottom: none; }
-.dark .infoRow { border-color: #2A2A2A; }
+.dark .infoRow { border-color: #2E2E2E; }
 
 .infoLabel {
-  display: flex; align-items: center; gap: 8px;
-  font-size: 12px; color: #A8A8A8;
-}
-
-.infoIcon {
-  display: flex; align-items: center; width: 16px; height: 16px;
-  color: #A8A8A8; flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #A8A8A8;
 }
 
 .infoVal {
-  font-size: 12px; color: #333333; font-weight: 500;
+  font-size: 12px;
+  color: #333333;
+  font-weight: 500;
 }
 .dark .infoVal { color: #D0D0D0; }
 
-/* Tombol kuning 387×48 */
+/* Tombol pengingat kuning — 387×48px */
 .btnPengingat {
-  width: 387px; height: 48px;
+  width: 387px;
   max-width: 100%;
-  background-color: #FFB843; border: none;
-  border-radius: 14px; color: #1A1A1A;
-  font-size: 14px; font-weight: 600; font-family: inherit;
-  cursor: pointer; transition: opacity .2s, transform .15s;
+  height: 48px;
+  background-color: #FFB843;
+  border: none;
+  border-radius: 14px;
+  color: #1A1A1A;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: opacity .2s, transform .15s;
 }
+/* ── EDITABLE INPUTS di inner card ── */
+.editInputWrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.editInput {
+  height: 28px;
+  border: 1.5px solid #D9D9D9;
+  border-radius: 30px;
+  padding: 0 8px;
+  font-size: 12px;
+  font-family: inherit;
+  color: #333;
+  background-color: #F8F7F2;
+  outline: none;
+  cursor: pointer;
+  transition: border-color .2s;
+  max-width: 130px;
+}
+.editInput:focus { border-color: #FFB843; }
+/* Hide native calendar icon, keep clickable */
+.editInput::-webkit-calendar-picker-indicator {
+  opacity: 0.5;
+  cursor: pointer;
+}
+
+.editSelect {
+  height: 28px;
+  border: 1.5px solid #D9D9D9;
+  border-radius: 30px;
+  padding: 0 8px;
+  font-size: 12px;
+  font-family: inherit;
+  color: #333;
+  background-color: #F8F7F2;
+  outline: none;
+  cursor: pointer;
+  transition: border-color .2s;
+  max-width: 130px;
+}
+.editSelect:focus { border-color: #FFB843; }
+
+/* Dark mode inputs */
+.dark .editInput,
+.dark .editSelect {
+  background-color: #2A2A2A;
+  border-color: #3A3A3A;
+  color: #F0F0F0;
+}
+.dark .editInput:focus,
+.dark .editSelect:focus { border-color: #FFB843; }
+
+/* Tombol simpan perubahan — kecil, di bawah inner card */
+.btnSimpanEdit {
+  width: 387px;
+  max-width: 100%;
+  height: 48px;
+  background-color: #FFB843;
+  border: 1.5px solid #ededed;
+  border-radius: 30px;
+  color: #333333;
+  font-size: 13px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background .2s;
+}
+
+.dark .btnSimpanEdit{
+  background-color: #FFB843;
+  border: 1.5px solid #3A3A3A;
+}
+.btnSimpanEdit:hover { background-color: #df8f10; }
+
 .btnPengingat:hover:not(:disabled) { opacity: 0.88; transform: translateY(-1px); }
 .btnPengingat:disabled { opacity: 0.65; cursor: default; }
 
 .lunasBadge {
-  text-align: center; padding: 12px;
-  background-color: #E8F5E9; border-radius: 12px;
-  color: #4CAF50; font-weight: 600; font-size: 13px;
+  text-align: center;
+  padding: 12px 16px;
+  background-color: #F8F7F2;
+  border-radius: 30px;
+  border: 1.5px solid #D9D9D9;
+  color: #A8A8A8;
+  font-weight: normal;
+  font-size: 13px;
 }
 
-/* Toast */
+.dark .lunasBadge{
+  background-color: #1A1A1A;
+  color: #323232;
+  border: 1.5px solid #2A2A2A;
+}
+
+/* ── LIST ROWS inside outer card ── */
+.listRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #F8F7F2;
+  border-radius: 14px;
+  padding: 13px 16px;
+  cursor: pointer;
+  transition: opacity .15s;
+  margin-bottom: 6px;
+}
+.listRow:last-child { margin-bottom: 0; }
+.listRow:hover { opacity: 0.88; }
+.dark .listRow { background-color: #1E1E1E; }
+
+.listName { font-size: 14px; font-weight: normal; color: #333; }
+.dark .listName { color: #F0F0F0; }
+.listSub { font-size: 12px; color: #A8A8A8; margin-top: 2px; }
+
+.listRowRight { display: flex; align-items: center; gap: 8px; }
+.chevron { color: #A8A8A8; font-size: 18px; }
+
+.badgeLunas { 
+  padding: 3px 10px; 
+  border-radius: 10px; 
+  background-color: #F8F7F2; 
+  border: 1px solid #D9D9D9;
+  color: #4CAF50; 
+  font-size: 11px; 
+  font-weight: normal; 
+}
+
+.dark .badgeLunas {
+  background-color: #1E1E1E; 
+  border: 1px solid #333333;
+}
+
+.badgeBelum { 
+  padding: 3px 10px; 
+  border-radius: 10px; 
+  background-color: #F8F7F2; 
+  color: #E53E3E; 
+  font-size: 11px; 
+  border: 1px solid #D9D9D9;
+  font-weight: 600; 
+}
+.dark .badgeBelum {
+  background-color: #1E1E1E; 
+  border: 1px solid #333333;
+}
+
+.empty { text-align: center; color: rgba(255,255,255,0.7); font-size: 14px; padding: 24px 0; }
+
+/* ── NAVBAR — sama persis guru ── */
+.bottomNavbar {
+  position: fixed;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 339px;
+  height: 69px;
+  background-color: #2C2C2C;
+  border-radius: 75px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 48px;
+  z-index: 999;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+}
+.dark .bottomNavbar { background-color: #1E1E1E; }
+
+.navItem {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  opacity: 0.6;
+}
+.navItem:hover { transform: translateY(-4px); opacity: 1; }
+.navActive { opacity: 1; }
+
+/* ── TOAST ── */
 .toast {
-  position: fixed; bottom: 32px; right: 24px;
+  position: fixed; bottom: 100px; right: 24px;
   background-color: #4CAF50; color: #fff;
   padding: 12px 22px; border-radius: 40px; font-size: 13px;
   z-index: 1000; box-shadow: 0 4px 20px rgba(0,0,0,0.2);
@@ -185,7 +378,8 @@
 }
 
 @media (max-width: 480px) {
+  .content { padding: 28px 16px 120px; }
   .outerCard { width: 100%; }
-  .bigCard { width: 100%; }
+  .innerCard { width: 100%; }
   .btnPengingat { width: 100%; }
 }

@@ -1,0 +1,479 @@
+/* dokumentasi.module.css */
+
+.page {
+  min-height: 100vh;
+  background-color: #F8F7F2;
+  font-family: 'Stack Sans Headline', sans-serif;
+  color: #333333;
+  display: flex;
+  flex-direction: column;
+}
+.dark { background-color: #0F0F0F; color: #F0F0F0; }
+
+/* ── HEADER ── */
+.header {
+  padding: 32px 32px 0;
+}
+.headerTitle {
+  font-size: 22px;
+  font-weight: 700;
+  color: #333333;
+  letter-spacing: -0.5px;
+}
+.dark .headerTitle { color: #F0F0F0; }
+
+/* ── CONTENT ── */
+.content {
+  flex: 1;
+  padding: 24px 32px 120px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* ── GRID — 2 kolom, card 369×142 ── */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, 369px);
+  gap: 20px;
+}
+
+/* ── CARD ── */
+.card {
+  width: 369px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Kotak gambar 369×142 */
+.cardImg {
+  width: 369px;
+  height: 142px;
+  background-color: #E0DFDA;
+  border-radius: 20px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.dark .cardImg { background-color: #2A2A2A; }
+
+.cardImgEl {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.cardImgPlaceholder {
+  opacity: 0.4;
+}
+
+/* Footer card: info + tombol */
+.cardFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.cardInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.cardNama {
+  font-size: 14px;
+  font-weight: 600;
+  color: #333333;
+}
+.dark .cardNama { color: #F0F0F0; }
+
+.cardSub {
+  font-size: 12px;
+  color: #A8A8A8;
+}
+
+/* Tombol Lihat selengkapnya */
+.btnLihat {
+  height: 32px;
+  padding: 0 16px;
+  background-color: #FFB843;
+  border: none;
+  border-radius: 20px;
+  color: #1A1A1A;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: opacity .2s;
+}
+.btnLihat:hover { opacity: 0.85; }
+
+/* ── TAMBAH ROW ── */
+.tambahRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.tambahLabel {
+  font-size: 15px;
+  font-weight: 600;
+  color: #333333;
+}
+.dark .tambahLabel { color: #F0F0F0; }
+
+.btnPlus {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background-color: #F0EFE9;
+  border: 1.5px solid #D9D9D9;
+  font-size: 20px;
+  color: #333;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background .2s;
+  line-height: 1;
+  padding: 0;
+}
+.btnPlus:hover { background-color: #E5E4DE; }
+.dark .btnPlus { background-color: #2A2A2A; border-color: #3A3A3A; color: #F0F0F0; }
+
+/* ══════════════════════════════════════
+   PANEL — 492×669px
+══════════════════════════════════════ */
+.panelOverlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0,0,0,0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 800;
+  padding: 24px;
+  box-sizing: border-box;
+}
+
+/* Main card 492×669 */
+.panelCard {
+  width: 492px;
+  min-height: 669px;
+  background-color: #F8F7F2;
+  border-radius: 30px;
+  padding: 24px 20px 24px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  position: relative;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+  max-height: 92vh;
+  overflow-y: auto;
+}
+.dark .panelCard { background-color: #1E1E1E; }
+
+.btnClose {
+  position: absolute;
+  top: 16px; right: 16px;
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  background-color: #E0DFDA;
+  border: none;
+  font-size: 14px;
+  color: #333;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: background .2s;
+  z-index: 1;
+}
+.btnClose:hover { background-color: #D0CFC9; }
+.dark .btnClose { background-color: #2A2A2A; color: #F0F0F0; }
+
+/* Kotak gambar 467×225 */
+.panelImgBox {
+  width: 467px;
+  max-width: 100%;
+  height: 225px;
+  background-color: #E0DFDA;
+  border-radius: 30px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: opacity .2s;
+  flex-shrink: 0;
+}
+.panelImgBox:hover { opacity: 0.88; }
+.dark .panelImgBox { background-color: #2A2A2A; }
+
+.panelImgEl {
+  width: 100%; height: 100%; object-fit: cover;
+}
+.panelImgPlaceholder {
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 8px; opacity: 0.5;
+}
+.panelImgHint {
+  font-size: 13px; color: #A8A8A8;
+}
+
+/* Nama kegiatan + pilih kelas — 230×50 each */
+.panelRow {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.inputNama {
+  width: 230px;
+  height: 50px;
+  background-color: #EEEEE8;
+  border: 1.5px solid #D9D9D9;
+  border-radius: 15px;
+  padding: 0 14px;
+  font-size: 14px;
+  font-family: inherit;
+  color: #333;
+  outline: none;
+  transition: border-color .2s;
+  box-sizing: border-box;
+}
+.inputNama:focus { border-color: #FFB843; }
+.inputNama::placeholder { color: #A8A8A8; }
+.dark .inputNama { background-color: #2A2A2A; border-color: #3A3A3A; color: #F0F0F0; }
+
+.selectKelas {
+  width: 230px;
+  height: 50px;
+  background-color: #EEEEE8;
+  border: 1.5px solid #D9D9D9;
+  border-radius: 14px;
+  padding: 0 14px;
+  font-size: 15px;
+  font-family: inherit;
+  color: #333;
+  outline: none;
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg width='16' height='16' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M6 9l6 6 6-6' stroke='%23A8A8A8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  box-sizing: border-box;
+  transition: border-color .2s;
+}
+.selectKelas:focus { border-color: #FFB843; }
+.dark .selectKelas { background-color: #2A2A2A; border-color: #3A3A3A; color: #F0F0F0; }
+
+.kelasTag {
+  display: inline-flex;
+  align-items: center;
+  height: 50px;
+  padding: 0 16px;
+  background-color: #EEEEE8;
+  border-radius: 30px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+}
+.dark .kelasTag { background-color: #2A2A2A; color: #F0F0F0; }
+
+/* Tambah siswa box — 468×233 */
+.siswaBox {
+  width: 468px;
+  max-width: 100%;
+  min-height: 233px;
+  background-color: #EEEEE8;
+  border-radius: 30px;
+  padding: 14px 16px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  position: relative;
+}
+.dark .siswaBox { background-color: #2A2A2A; }
+
+.siswaLabel {
+  font-size: 13px;
+  font-weight: 600;
+  color: #333;
+}
+.dark .siswaLabel { color: #D0D0D0; }
+
+.siswaChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.siswaChip {
+  height: 32px;
+  padding: 0 14px;
+  background-color: #2C2C2C;
+  border-radius: 30px;
+  color: #F8F7F2;
+  font-size: 13px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  user-select: none;
+  transition: opacity .2s;
+}
+.siswaChip:hover { opacity: 0.8; }
+.dark .siswaChip { background-color: #444; }
+
+.btnAddSiswa {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  background-color: #F0EFE9;
+  border: 1.5px solid #D9D9D9;
+  font-size: 20px; color: #333;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; font-family: inherit;
+  transition: background .2s;
+  line-height: 1; padding: 0;
+}
+.btnAddSiswa:hover { background-color: #E5E4DE; }
+.dark .btnAddSiswa { background-color: #333; border-color: #555; color: #F0F0F0; }
+
+.siswaDropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 16px;
+  background-color: #F8F7F2;
+  border: 1.5px solid #D9D9D9;
+  border-radius: 30px;
+  overflow: hidden;
+  z-index: 10;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+  min-width: 160px;
+}
+.dark .siswaDropdown { background-color: #1E1E1E; border-color: #3A3A3A; }
+
+.siswaDropdownItem {
+  padding: 10px 16px;
+  font-size: 14px;
+  color: #333;
+  cursor: pointer;
+  transition: background .15s;
+}
+.siswaDropdownItem:hover { background-color: #F0EFE9; }
+.dark .siswaDropdownItem { color: #D0D0D0; }
+.dark .siswaDropdownItem:hover { background-color: #2A2A2A; }
+
+.siswaCount {
+  margin-top: auto;
+  font-size: 12px;
+  color: #A8A8A8;
+  text-align: right;
+}
+
+/* Tombol Tambah/Simpan — 468×55 kuning */
+.btnTambah {
+  width: 468px;
+  max-width: 100%;
+  height: 55px;
+  background-color: #FFB843;
+  border: none;
+  border-radius: 30px;
+  color: #1A1A1A;
+  font-size: 16px;
+  font-weight: normal;
+  font-family: inherit;
+  cursor: pointer;
+  transition: opacity .2s, transform .15s;
+}
+.btnTambah:hover { opacity: 0.88; transform: translateY(-1px); }
+
+/* Detail: tanggal dan actions */
+.detailDate {
+  font-size: 13px;
+  color: #A8A8A8;
+}
+
+.detailActions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.btnHapus {
+  width: 100%;
+  height: 40px;
+  background-color: transparent;
+  border: 1.5px solid #FF4343;
+  border-radius: 14px;
+  color: #FF4343;
+  font-size: 14px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background .2s;
+}
+.btnHapus:hover { background-color: #FFE9E9; }
+
+/* ── NAVBAR ── */
+.bottomNavbar {
+  position: fixed;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 339px;
+  height: 69px;
+  background-color: #2C2C2C;
+  border-radius: 75px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 48px;
+  z-index: 999;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+}
+.dark .bottomNavbar { background-color: #1E1E1E; }
+
+.navItem {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  opacity: 0.6;
+}
+.navItem:hover { transform: translateY(-4px); opacity: 1; }
+
+/* ── TOAST ── */
+.toast {
+  position: fixed;
+  bottom: 100px; right: 24px;
+  background-color: #4CAF50; color: #fff;
+  padding: 12px 22px; border-radius: 40px;
+  font-size: 13px; z-index: 1000;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+  animation: toastIn .3s ease; max-width: 300px;
+}
+.toastErr { background-color: #FF4343; }
+@keyframes toastIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── RESPONSIVE MOBILE ── */
+@media (max-width: 820px) {
+  .grid { grid-template-columns: 1fr; }
+  .card, .cardImg { width: 100%; }
+  .panelCard { width: 100%; min-height: auto; }
+  .panelImgBox { width: 100%; }
+  .inputNama, .selectKelas { width: calc(50% - 4px); }
+  .siswaBox, .btnTambah { width: 100%; }
+  .content { padding: 20px 16px 120px; }
+  .header { padding: 24px 16px 0; }
+}

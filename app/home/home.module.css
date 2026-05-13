@@ -77,6 +77,7 @@
 
 .dark .barKegiatan .barKegiatanInner {
   background-color: #1E1E1E;
+  border: 1.5px solid #2A2A2A;
 }
 
 .dark .barKegiatanLabel {
@@ -208,9 +209,12 @@
 .btnMinus { width: 27px; height: 27px; background-color: #FF4343; color: #F8F7F2; border: none; border-radius: 15px; font-size: 20px; display: flex; justify-content: center; align-items: center; cursor: pointer; flex-shrink: 0; line-height: 1; }
 .inputKegiatan { width: 363px; height: 28px; background-color: #E8E8E8; border: none; border-radius: 15px; padding: 0 15px; color: #333333; font-family: inherit; font-size: 13px; outline: none; flex-shrink: 1; }
 .inputKegiatan::placeholder { color: #A8A8A8; }
-.inputWaktu { width: 111px; height: 30px; background-color: #F8F7F2; border: 1px solid #D9D9D9; border-radius: 15px; padding: 0 10px; color: #333333; font-family: inherit; font-size: 13px; outline: none; flex-shrink: 0; text-align: center; }
+.inputWaktu { width: 111px; height: 20px; background-color: #F8F7F2; border: 1px solid #D9D9D9; border-radius: 15px; padding: 0 10px; color: #333333; font-family: inherit; font-size: 13px; outline: none; flex-shrink: 0; text-align: center; }
 .btnPlus { position: absolute; right: 45%; top: 100%; transform: translateY(-50%); width: 27px; height: 27px; background-color: #F8F7F2; color: #333333; border: none; border-radius: 15px; font-size: 20px; display: flex; justify-content: center; align-items: center; cursor: pointer; line-height: 1; }
-
+.dark .btnPlus {
+  background-color: #1E1E1E;
+  color: #F8F7F2;
+}
 /* --- STATUS ABSEN --- */
 .absenBox { width: 620px; height: 136px; background-color: #F8F7F2; border: 1px solid #D9D9D9; border-radius: 30px; padding: 20px; box-sizing: border-box; display: flex; justify-content: space-between; align-items: center; }
 .absenLeft { display: flex; flex-direction: column; gap: 12px; max-width: 300px; }
@@ -260,14 +264,18 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  background-color: #2C2C2C;
-  border-radius: 10px;
+  height: 30px;
+  width: 128px;
+  background-color: #F8F7F2;
+  border: 1px solid #D9D9D9;
+  border-radius: 15px;
   padding: 4px 8px;
   flex-shrink: 0;
+  
 }
 
 .timeIcon {
-  color: #F8F7F2;
+  color: #333333;
   flex-shrink: 0;
   opacity: 0.8;
 }
@@ -277,8 +285,18 @@
   border: none;
   padding: 0;
   border-radius: 0;
-  color: #F8F7F2;
+  color: #333333;
   font-size: 13px;
+  
+}
+
+.dark .inputWaktu{
+  color: #F8F7F2;
+}
+
+.dark .timeInputWrapper{
+  background-color: #1E1E1E;
+  border: 1px solid #2A2A2A;
 }
 
 /* Date input dengan icon kalender */
@@ -578,11 +596,21 @@
   gap: 10px;
 }
 
+.barIcon {
+  color: #333333;
+  transition: color 0.3s ease;
+}
+
+.dark .barIcon {
+  color: #F0F0F0;
+}
+
 /* kotak gelap tempat icon */
 .barKegiatanInner {
   width: 100%;
   height: 80px;
-  background-color: #2C2C2C;
+  background-color: #F8F7F2;
+  border: 1.5px solid #D9D9D9;
   border-radius: 24px;
   display: flex;
   align-items: center;
@@ -601,12 +629,12 @@
   border: none;
   cursor: pointer;
   padding: 10px 0;
-  border-radius: 16px;
+  border-radius: 30px;
   opacity: 0.85;
   transition: background 0.18s;
 }
 .barKegiatanIconBtn:hover {
-  background-color: rgba(255,255,255,0.07);
+  background-color: rgba(143, 143, 143, 0.07);
 }
 
 /* baris label di bawah kotak */
@@ -628,7 +656,7 @@
 .barKegiatanDivider {
   width: 1px;
   height: 36px;
-  background-color: rgba(255,255,255,0.12);
+  background-color: rgba(60, 60, 60, 0.12);
   flex-shrink: 0;
 }
 
@@ -677,7 +705,7 @@
   }
 
   .inputWaktu {
-    width: 80px;
+    width: 100px;
     font-size: 12px;
   }
 
