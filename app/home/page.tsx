@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import styles from './home.module.css';
+import jsQR from 'jsqr';
 
 // Install dulu: npm install jsqr
 // lalu import: import jsQR from 'jsqr';
@@ -38,6 +39,8 @@ export default function HomePage() {
   const [scanSesi, setScanSesi] = useState<'datang' | 'pulang'>('datang');
   const [isScanning, setIsScanning] = useState(false);
   const [showScanModal, setShowScanModal] = useState(false);
+  const [qrDetected, setQrDetected] = useState(false); // flash hijau saat QR terbaca
+  const isProcessingRef = useRef(false); // cegah double-trigger
   const videoRef = useRef<HTMLVideoElement>(null);
 
   // ✅ FIX 3: Simpan stream di ref agar bisa dihentikan kapan saja
@@ -65,6 +68,18 @@ export default function HomePage() {
 
   const [toastData, setToastData] = useState({ visible: false, message: '', isError: false });
   const [showAllSiswa, setShowAllSiswa] = useState(false);
+
+  // Profile state — sync dengan halaman user
+  const [profileName, setProfileName] = useState('Cahaya Indra S.Pd');
+  const [profilePhoto, setProfilePhoto] = useState('');
+
+  // Foto siswa per ID
+  const [studentPhotos, setStudentPhotos] = useState<Record<string, string>>({});
+
+  // Bantuan form
+  const [showBantuan, setShowBantuan] = useState(false);
+  const [bantuanStep, setBantuanStep] = useState<'form' | 'sent'>('form');
+  const [bantuanData, setBantuanData] = useState({ nama: '', kendala: '', kontak: '' });
 
   // State User Popup
   const [showUserPopup, setShowUserPopup] = useState(false);
@@ -127,6 +142,15 @@ export default function HomePage() {
     const savedAssessments = localStorage.getItem('kindo_assessments');
     if (savedAssessments) setAllAssessments(JSON.parse(savedAssessments));
 
+    // Load profile nama dari halaman user
+    const savedProfile = JSON.parse(localStorage.getItem('kindo_profile_guru') || '{}');
+    if (savedProfile.namaLengkap) setProfileName(savedProfile.namaLengkap);
+    if (savedProfile.photo) setProfilePhoto(savedProfile.photo);
+
+    // Load foto siswa
+    const savedPhotos = JSON.parse(localStorage.getItem('kindo_student_photos') || '{}');
+    setStudentPhotos(savedPhotos);
+
     const timer = setInterval(() => setCurrentTime(new Date()), 1000 * 60);
     return () => clearInterval(timer);
   }, []);
@@ -156,19 +180,18 @@ export default function HomePage() {
   };
 
   // ─────────────────────────────────────────
-  // ✅ FIX 1 & 3: Fungsi Scan QR yang benar
+  // Fungsi Scan QR — jsQR aktif
   // ─────────────────────────────────────────
   const stopScan = () => {
-    // Hentikan semua track kamera
     if (streamRef.current) {
       streamRef.current.getTracks().forEach(track => track.stop());
       streamRef.current = null;
     }
-    // Hentikan loop animasi
     if (animationFrameRef.current) {
       cancelAnimationFrame(animationFrameRef.current);
       animationFrameRef.current = null;
     }
+    isProcessingRef.current = false;
     setIsScanning(false);
   };
 
@@ -185,22 +208,94 @@ export default function HomePage() {
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
       const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
 
-      // Gunakan jsQR untuk decode QR
-      // Import di atas: import jsQR from 'jsqr';
-      // const code = jsQR(imageData.data, imageData.width, imageData.height);
-      // if (code) {
-      //   // QR berhasil dibaca — validasi data QR di sini jika perlu
-      //   stopScan();
-      //   processAbsenSucceed();
-      //   return;
-      // }
+      const code = jsQR(imageData.data, imageData.width, imageData.height, {
+        inversionAttempts: 'dontInvert',
+      });
 
-      // ─── SIMULASI (hapus blok ini setelah jsQR diinstall) ───
-      // Untuk sementara, deteksi otomatis setelah 3 detik
-      // Ini hanya placeholder — ganti dengan logika jsQR di atas
+      if (code && !isProcessingRef.current) {
+        isProcessingRef.current = true;
+
+        // ── Parse & validasi isi QR ──
+        let qrData: { id?: number; lemdikId?: number; type?: string; createdAt?: string } | null = null;
+        try {
+          qrData = JSON.parse(code.data);
+        } catch {
+          // QR bukan JSON valid — abaikan, lanjut scan
+          isProcessingRef.current = false;
+          animationFrameRef.current = requestAnimationFrame(tickQRScan);
+          return;
+        }
+
+        // Validasi field wajib
+        if (!qrData || !qrData.type || !qrData.createdAt) {
+          showToast("QR tidak valid. Pastikan scan QR yang benar.", true);
+          isProcessingRef.current = false;
+          animationFrameRef.current = requestAnimationFrame(tickQRScan);
+          return;
+        }
+
+        // Validasi tanggal QR — harus hari ini
+        const qrDate = qrData.createdAt.split(' ')[0]; // ambil bagian tanggal saja
+        const today = new Date().toISOString().split('T')[0];
+        if (qrDate !== today) {
+          stopScan();
+          showToast(`QR sudah kadaluarsa (dibuat ${qrDate}). Gunakan QR hari ini.`, true);
+          return;
+        }
+
+        // Validasi tipe QR vs sesi yang sedang dibuka
+        const qrType = qrData.type.toLowerCase();
+        const isQRDatang = qrType.includes('datang');
+        const isQRPulang = qrType.includes('pulang');
+
+        if (!isQRDatang && !isQRPulang) {
+          stopScan();
+          showToast("Tipe QR tidak dikenali. Pastikan scan QR absen.", true);
+          return;
+        }
+
+        // Validasi sesi — cocokkan QR dengan sesi yang sedang aktif
+        if (scanSesi === 'datang' && !isQRDatang) {
+          stopScan();
+          showToast("Ini QR Pulang, bukan QR Datang. Scan QR yang sesuai.", true);
+          return;
+        }
+        if (scanSesi === 'pulang' && !isQRPulang) {
+          stopScan();
+          showToast("Ini QR Datang, bukan QR Pulang. Scan QR yang sesuai.", true);
+          return;
+        }
+
+        // Semua validasi lolos — catat absen
+        setQrDetected(true);
+        stopScan();
+        setTimeout(() => {
+          setQrDetected(false);
+          processAbsenSucceed();
+        }, 600);
+        return;
+      }
     }
 
     animationFrameRef.current = requestAnimationFrame(tickQRScan);
+  };
+
+  const startScan = async () => {
+    isProcessingRef.current = false;
+    setQrDetected(false);
+    setIsScanning(true);
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+      streamRef.current = stream;
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        await videoRef.current.play();
+      }
+      animationFrameRef.current = requestAnimationFrame(tickQRScan);
+    } catch (err) {
+      alert("Gagal mengakses kamera. Pastikan izin kamera sudah diberikan.");
+      setIsScanning(false);
+    }
   };
 
   // ─────────────────────────────────────────
@@ -211,44 +306,23 @@ export default function HomePage() {
     const jam = now.getHours() * 60 + now.getMinutes();
     const JAM_14 = 14 * 60;
 
+    if (absenDatang && absenPulang) {
+      showToast("Anda sudah absen datang & pulang hari ini.");
+      return;
+    }
+
     if (!absenDatang) {
-      // Belum absen datang — buka scan datang (telat jika > 08:00)
+      // Sesi datang — bisa kapan saja (terlambat jika > 08:00)
       setScanSesi('datang');
       setShowScanModal(true);
     } else if (!absenPulang) {
-      // Sudah absen datang — cek apakah sudah waktunya pulang (>= 14:00)
+      // Sesi pulang — hanya setelah jam 14:00
       if (jam < JAM_14) {
         showToast("Absen pulang baru bisa dilakukan mulai jam 14:00", true);
         return;
       }
       setScanSesi('pulang');
       setShowScanModal(true);
-    } else {
-      // Sudah absen keduanya
-      showToast("Anda sudah absen datang & pulang hari ini.");
-    }
-  };
-
-  const startScan = async () => {
-    setIsScanning(true);
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-      streamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        await videoRef.current.play();
-      }
-      animationFrameRef.current = requestAnimationFrame(tickQRScan);
-
-      // SIMULASI: hapus setelah jsQR diinstall
-      setTimeout(() => {
-        stopScan();
-        processAbsenSucceed();
-      }, 2500);
-
-    } catch (err) {
-      alert("Gagal mengakses kamera.");
-      setIsScanning(false);
     }
   };
 
@@ -367,6 +441,39 @@ export default function HomePage() {
     }
   };
 
+  // Upload foto siswa
+  const handleStudentPhotoUpload = (siswaId: string, e: React.ChangeEvent<HTMLInputElement>) => {
+    e.stopPropagation();
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      const result = ev.target?.result as string;
+      const updated = { ...studentPhotos, [siswaId]: result };
+      setStudentPhotos(updated);
+      localStorage.setItem('kindo_student_photos', JSON.stringify(updated));
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // Kirim form bantuan
+  const handleKirimBantuan = () => {
+    if (!bantuanData.nama.trim() || !bantuanData.kendala.trim()) {
+      showToast('Mohon isi nama dan kendala.', true);
+      return;
+    }
+    const requests = JSON.parse(localStorage.getItem('kindo_bantuan') || '[]');
+    requests.unshift({ ...bantuanData, id: Date.now(), timestamp: Date.now(), read: false });
+    localStorage.setItem('kindo_bantuan', JSON.stringify(requests));
+    setBantuanStep('sent');
+  };
+
+  const closeBantuan = () => {
+    setShowBantuan(false);
+    setBantuanStep('form');
+    setBantuanData({ nama: '', kendala: '', kontak: '' });
+  };
+
   // List Siswa
   const dummyStudents = Array.from({ length: CLASS_DATA[selectedClass] }).map((_, i) => ({
     id: `${selectedClass.replace(' ', '')}_${i + 1}`,
@@ -409,12 +516,16 @@ export default function HomePage() {
                 width: 38, height: 38, borderRadius: '50%',
                 backgroundColor: isDark ? '#2A2A2A' : '#E8E8E8',
                 display: 'flex', justifyContent: 'center', alignItems: 'center', flexShrink: 0,
+                overflow: 'hidden',
               }}>
-                <Image src="/user.svg" alt="User" width={20} height={20} />
+                {profilePhoto
+                  ? <img src={profilePhoto} alt="profil" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  : <Image src="/user.svg" alt="User" width={20} height={20} />
+                }
               </div>
               <div>
-                <div style={{ fontSize: 14, fontWeight: 600, color: isDark ? '#F0F0F0' : '#333' }}>User 1</div>
-                <div style={{ fontSize: 11, color: '#A8A8A8' }}>[jabatan user]</div>
+                <div style={{ fontSize: 14, fontWeight: 600, color: isDark ? '#F0F0F0' : '#333' }}>{profileName}</div>
+                <div style={{ fontSize: 11, color: '#A8A8A8' }}>Kepala Sekolah</div>
               </div>
             </div>
 
@@ -422,19 +533,48 @@ export default function HomePage() {
 
             {/* Menu items */}
             {[
-              { icon: '/bantuan.svg', label: 'Bantuan' },
-              { icon: '/pengaturan.svg', label: 'Pengaturan' },
-              { icon: '/user1.svg', label: 'Profil' },
+              {
+                icon: (
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M12 8V12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M12 16H12.01" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                ),
+                label: 'Bantuan',
+                action: () => { setShowUserPopup(false); setShowBantuan(true); }
+              },
+              {
+                icon: (
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 15C13.6569 15 15 13.6569 15 12C15 10.3431 13.6569 9 12 9C10.3431 9 9 10.3431 9 12C9 13.6569 10.3431 15 12 15Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M19.4 15C19.1277 15.6171 19.2583 16.3378 19.73 16.82L19.79 16.88C20.1656 17.2551 20.3766 17.7642 20.3766 18.295C20.3766 18.8258 20.1656 19.3349 19.79 19.71C19.4149 20.0856 18.9058 20.2966 18.375 20.2966C17.8442 20.2966 17.3351 20.0856 16.96 19.71L16.9 19.65C16.4178 19.1783 15.6971 19.0477 15.08 19.32C14.4755 19.5791 14.0826 20.1724 14.08 20.83V21C14.08 22.1046 13.1846 23 12.08 23C10.9754 23 10.08 22.1046 10.08 21V20.91C10.0642 20.2327 9.63587 19.6339 9 19.4C8.38291 19.1277 7.66219 19.2583 7.18 19.73L7.12 19.79C6.74485 20.1656 6.23582 20.3766 5.705 20.3766C5.17418 20.3766 4.66515 20.1656 4.29 19.79C3.91435 19.4149 3.70343 18.9058 3.70343 18.375C3.70343 17.8442 3.91435 17.3351 4.29 16.96L4.35 16.9C4.82167 16.4178 4.95231 15.6971 4.68 15.08C4.42093 14.4755 3.82764 14.0826 3.17 14.08H3C1.89543 14.08 1 13.1846 1 12.08C1 10.9754 1.89543 10.08 3 10.08H3.09C3.76733 10.0642 4.36613 9.63587 4.6 9C4.87231 8.38291 4.74167 7.66219 4.27 7.18L4.21 7.12C3.83435 6.74485 3.62343 6.23582 3.62343 5.705C3.62343 5.17418 3.83435 4.66515 4.21 4.29C4.58515 3.91435 5.09418 3.70343 5.625 3.70343C6.15582 3.70343 6.66485 3.91435 7.04 4.29L7.1 4.35C7.58219 4.82167 8.30291 4.95231 8.92 4.68H9C9.60447 4.42093 9.99738 3.82764 10 3.17V3C10 1.89543 10.8954 1 12 1C13.1046 1 14 1.89543 14 3V3.09C14.0026 3.74764 14.3955 4.34093 15 4.6C15.6171 4.87231 16.3378 4.74167 16.82 4.27L16.88 4.21C17.2551 3.83435 17.7642 3.62343 18.295 3.62343C18.8258 3.62343 19.3349 3.83435 19.71 4.21C20.0856 4.58515 20.2966 5.09418 20.2966 5.625C20.2966 6.15582 20.0856 6.66485 19.71 7.04L19.65 7.1C19.1783 7.58219 19.0477 8.30291 19.32 8.92V9C19.5791 9.60447 20.1724 9.99738 20.83 10H21C22.1046 10 23 10.8954 23 12C23 13.1046 22.1046 14 21 14H20.91C20.2524 14.0026 19.6591 14.3955 19.4 15Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                ),
+                label: 'Pengaturan',
+                action: () => {}
+              },
+              {
+                icon: (
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 12C14.7614 12 17 9.76142 17 7C17 4.23858 14.7614 2 12 2C9.23858 2 7 4.23858 7 7C7 9.76142 9.23858 12 12 12Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M20.5899 22C20.5899 18.13 16.7399 15 11.9999 15C7.25991 15 3.40991 18.13 3.40991 22" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                ),
+                label: 'Profil',
+                action: () => { setShowUserPopup(false); router.push('/user'); }
+              },
             ].map(item => (
               <div key={item.label} style={{
                 display: 'flex', alignItems: 'center', gap: 10,
                 padding: '8px 4px', borderRadius: 8, cursor: 'pointer',
                 color: isDark ? '#E0E0E0' : '#333', fontSize: 13, transition: 'background 0.15s',
               }}
+                onClick={item.action}
                 onMouseEnter={e => (e.currentTarget.style.backgroundColor = isDark ? '#2A2A2A' : '#F0EFE9')}
                 onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}
               >
-                <Image src={item.icon} alt={item.label} width={16} height={16} />
+                {item.icon}
                 {item.label}
               </div>
             ))}
@@ -510,6 +650,21 @@ export default function HomePage() {
                 <>
                   <video ref={videoRef} playsInline muted className={styles.scanVideo}></video>
                   <canvas ref={canvasRef} style={{ display: 'none' }}></canvas>
+                  {/* Overlay bracket + scan line selama scanning */}
+                  <div className={styles.scanOverlay}>
+                    <div className={qrDetected ? styles.bracketTL_success : styles.bracketTL} />
+                    <div className={qrDetected ? styles.bracketTR_success : styles.bracketTR} />
+                    <div className={qrDetected ? styles.bracketBL_success : styles.bracketBL} />
+                    <div className={qrDetected ? styles.bracketBR_success : styles.bracketBR} />
+                    {!qrDetected && <div className={styles.scanLine} />}
+                    {qrDetected && (
+                      <div className={styles.qrSuccessFlash}>
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none">
+                          <path d="M20 6L9 17L4 12" stroke="#22c55e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                      </div>
+                    )}
+                  </div>
                 </>
               ) : (
                 <div className={styles.scanBracketArea}>
@@ -654,36 +809,36 @@ export default function HomePage() {
           <div className={styles.barKegiatan}>
             {/* Kotak gelap — hanya icon */}
             <div className={styles.barKegiatanInner}>
-              <button className={styles.barKegiatanIconBtn} onClick={() => router.push('/data-siswa')}>
+              <button className={styles.barKegiatanIconBtn} onClick={() => router.push('/data-siswa')} style={{ color: isDark ? '#E0E0E0' : '#2C2C2C' }}>
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M18.0001 7.16C17.9401 7.15 17.8701 7.15 17.8101 7.16C16.4301 7.11 15.3301 5.98 15.3301 4.58C15.3301 3.15 16.4801 2 17.9101 2C19.3401 2 20.4901 3.16 20.4901 4.58C20.4801 5.98 19.3801 7.11 18.0001 7.16Z" stroke="#2C2C2C" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="M16.9704 14.4402C18.3404 14.6702 19.8504 14.4302 20.9104 13.7202C22.3204 12.7802 22.3204 11.2402 20.9104 10.3002C19.8404 9.59016 18.3104 9.35016 16.9404 9.59016" stroke="#2C2C2C" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="M5.97047 7.16C6.03047 7.15 6.10047 7.15 6.16047 7.16C7.54047 7.11 8.64047 5.98 8.64047 4.58C8.64047 3.15 7.49047 2 6.06047 2C4.63047 2 3.48047 3.16 3.48047 4.58C3.49047 5.98 4.59047 7.11 5.97047 7.16Z" stroke="#2C2C2C" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="M7.00043 14.4402C5.63043 14.6702 4.12043 14.4302 3.06043 13.7202C1.65043 12.7802 1.65043 11.2402 3.06043 10.3002C4.13043 9.59016 5.66043 9.35016 7.03043 9.59016" stroke="#2C2C2C" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="M12.0001 14.6302C11.9401 14.6202 11.8701 14.6202 11.8101 14.6302C10.4301 14.5802 9.33008 13.4502 9.33008 12.0502C9.33008 10.6202 10.4801 9.47021 11.9101 9.47021C13.3401 9.47021 14.4901 10.6302 14.4901 12.0502C14.4801 13.4502 13.3801 14.5902 12.0001 14.6302Z" stroke="#2C2C2C" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="M9.08973 17.7804C7.67973 18.7204 7.67973 20.2603 9.08973 21.2003C10.6897 22.2703 13.3097 22.2703 14.9097 21.2003C16.3197 20.2603 16.3197 18.7204 14.9097 17.7804C13.3197 16.7204 10.6897 16.7204 9.08973 17.7804Z" stroke="#2C2C2C" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M18.0001 7.16C17.9401 7.15 17.8701 7.15 17.8101 7.16C16.4301 7.11 15.3301 5.98 15.3301 4.58C15.3301 3.15 16.4801 2 17.9101 2C19.3401 2 20.4901 3.16 20.4901 4.58C20.4801 5.98 19.3801 7.11 18.0001 7.16Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M16.9704 14.4402C18.3404 14.6702 19.8504 14.4302 20.9104 13.7202C22.3204 12.7802 22.3204 11.2402 20.9104 10.3002C19.8404 9.59016 18.3104 9.35016 16.9404 9.59016" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M5.97047 7.16C6.03047 7.15 6.10047 7.15 6.16047 7.16C7.54047 7.11 8.64047 5.98 8.64047 4.58C8.64047 3.15 7.49047 2 6.06047 2C4.63047 2 3.48047 3.16 3.48047 4.58C3.49047 5.98 4.59047 7.11 5.97047 7.16Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M7.00043 14.4402C5.63043 14.6702 4.12043 14.4302 3.06043 13.7202C1.65043 12.7802 1.65043 11.2402 3.06043 10.3002C4.13043 9.59016 5.66043 9.35016 7.03043 9.59016" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M12.0001 14.6302C11.9401 14.6202 11.8701 14.6202 11.8101 14.6302C10.4301 14.5802 9.33008 13.4502 9.33008 12.0502C9.33008 10.6202 10.4801 9.47021 11.9101 9.47021C13.3401 9.47021 14.4901 10.6302 14.4901 12.0502C14.4801 13.4502 13.3801 14.5902 12.0001 14.6302Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M9.08973 17.7804C7.67973 18.7204 7.67973 20.2603 9.08973 21.2003C10.6897 22.2703 13.3097 22.2703 14.9097 21.2003C16.3197 20.2603 16.3197 18.7204 14.9097 17.7804C13.3197 16.7204 10.6897 16.7204 9.08973 17.7804Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
               </button>
 
               <div className={styles.barKegiatanDivider} />
 
-              <button className={styles.barKegiatanIconBtn} onClick={() => router.push('/dokumentasi-kegiatan')}>
+              <button className={styles.barKegiatanIconBtn} onClick={() => router.push('/dokumentasi-kegiatan')} style={{ color: isDark ? '#E0E0E0' : '#2C2C2C' }}>
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M9 10C10.1046 10 11 9.10457 11 8C11 6.89543 10.1046 6 9 6C7.89543 6 7 6.89543 7 8C7 9.10457 7.89543 10 9 10Z" stroke="#2C2C2C" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="M13 2H9C4 2 2 4 2 9V15C2 20 4 22 9 22H15C20 22 22 20 22 15V10" stroke="#2C2C2C" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="M15.75 5H21.25" stroke="#2C2C2C" strokeWidth="1.5" strokeLinecap="round"/>
-                  <path d="M18.5 7.75V2.25" stroke="#2C2C2C" strokeWidth="1.5" strokeLinecap="round"/>
-                  <path d="M2.66992 18.9501L7.59992 15.6401C8.38992 15.1101 9.52992 15.1701 10.2399 15.7801L10.5699 16.0701C11.3499 16.7401 12.6099 16.7401 13.3899 16.0701L17.5499 12.5001C18.3299 11.8301 19.5899 11.8301 20.3699 12.5001L21.9999 13.9001" stroke="#2C2C2C" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M9 10C10.1046 10 11 9.10457 11 8C11 6.89543 10.1046 6 9 6C7.89543 6 7 6.89543 7 8C7 9.10457 7.89543 10 9 10Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M13 2H9C4 2 2 4 2 9V15C2 20 4 22 9 22H15C20 22 22 20 22 15V10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M15.75 5H21.25" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                  <path d="M18.5 7.75V2.25" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                  <path d="M2.66992 18.9501L7.59992 15.6401C8.38992 15.1101 9.52992 15.1701 10.2399 15.7801L10.5699 16.0701C11.3499 16.7401 12.6099 16.7401 13.3899 16.0701L17.5499 12.5001C18.3299 11.8301 19.5899 11.8301 20.3699 12.5001L21.9999 13.9001" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
               </button>
 
               <div className={styles.barKegiatanDivider} />
 
-              <button className={styles.barKegiatanIconBtn} onClick={() => router.push('/laporan-perkembangan')}>
+              <button className={styles.barKegiatanIconBtn} onClick={() => router.push('/laporan-perkembangan')} style={{ color: isDark ? '#E0E0E0' : '#2C2C2C' }}>
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M9 22H15C20 22 22 20 22 15V9C22 4 20 2 15 2H9C4 2 2 4 2 9V15C2 20 4 22 9 22Z" stroke="#2C2C2C" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="M15.5 18.5C16.6 18.5 17.5 17.6 17.5 16.5V7.5C17.5 6.4 16.6 5.5 15.5 5.5C14.4 5.5 13.5 6.4 13.5 7.5V16.5C13.5 17.6 14.39 18.5 15.5 18.5Z" stroke="#2C2C2C" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="M8.5 18.5C9.6 18.5 10.5 17.6 10.5 16.5V13C10.5 11.9 9.6 11 8.5 11C7.4 11 6.5 11.9 6.5 13V16.5C6.5 17.6 7.39 18.5 8.5 18.5Z" stroke="#2C2C2C" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M9 22H15C20 22 22 20 22 15V9C22 4 20 2 15 2H9C4 2 2 4 2 9V15C2 20 4 22 9 22Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M15.5 18.5C16.6 18.5 17.5 17.6 17.5 16.5V7.5C17.5 6.4 16.6 5.5 15.5 5.5C14.4 5.5 13.5 6.4 13.5 7.5V16.5C13.5 17.6 14.39 18.5 15.5 18.5Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M8.5 18.5C9.6 18.5 10.5 17.6 10.5 16.5V13C10.5 11.9 9.6 11 8.5 11C7.4 11 6.5 11.9 6.5 13V16.5C6.5 17.6 7.39 18.5 8.5 18.5Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
               </button>
             </div>
@@ -721,15 +876,6 @@ export default function HomePage() {
                     />
                   </div>
                   <div className={styles.dateInputWrapper}>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" className={styles.calendarIcon}>
-                      <path d="M8 2V5" stroke="currentColor" strokeWidth="1.5" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round"/>
-                      <path d="M16 2V5" stroke="currentColor" strokeWidth="1.5" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round"/>
-                      <path d="M3.5 9.08984H20.5" stroke="currentColor" strokeWidth="1.5" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round"/>
-                      <path d="M21 8.5V17C21 20 19.5 22 16 22H8C4.5 22 3 20 3 17V8.5C3 5.5 4.5 3.5 8 3.5H16C19.5 3.5 21 5.5 21 8.5Z" stroke="currentColor" strokeWidth="1.5" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round"/>
-                      <path d="M15.6947 13.7002H15.7037" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                      <path d="M11.9955 13.7002H12.0045" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                      <path d="M8.29431 13.7002H8.30329" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
                     <input type="date" className={`${styles.dropdownFilter} ${styles.dateInput}`} value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} />
                   </div>
                 </div>
@@ -741,8 +887,23 @@ export default function HomePage() {
                 const currentStatus = attendanceData[`${siswa.id}_${selectedDate}`] || 'Hadir';
                 return (
                   <div key={siswa.id} className={styles.card} onClick={() => openPenilaian(siswa)}>
-                    <div className={styles.imageBox}>
-                      <Image src="/icongmbr.png" alt="siswa" width={60} height={60} />
+                    <div
+                      className={styles.imageBox}
+                      onClick={e => { e.stopPropagation(); document.getElementById(`photo-${siswa.id}`)?.click(); }}
+                      title="Klik untuk ganti foto"
+                      style={{ cursor: 'pointer', position: 'relative' }}
+                    >
+                      {studentPhotos[siswa.id]
+                        ? <img src={studentPhotos[siswa.id]} alt={siswa.name} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 'inherit' }} />
+                        : <Image src="/icongmbr.png" alt="siswa" width={60} height={60} />
+                      }
+                      <input
+                        id={`photo-${siswa.id}`}
+                        type="file"
+                        accept="image/*"
+                        style={{ display: 'none' }}
+                        onChange={e => handleStudentPhotoUpload(siswa.id, e)}
+                      />
                     </div>
                     <div className={styles.infoArea}>
                       <div className={styles.studentName}>{siswa.name}</div>
@@ -788,7 +949,7 @@ export default function HomePage() {
           <div className={styles.penilaianCard}>
             <div className={styles.penilaianHeader}>
               <div className={styles.penilaianImgBox}>
-                <Image src="/gambar.svg" alt="Rapor" width={57.86} height={59.37} />
+                <Image src="/icongmbr.png" alt="Rapor" width={57.86} height={59.37} />
               </div>
               <div className={styles.penilaianInfo}>
                 <div className={styles.penilaianName}>{activeStudent.name}</div>
@@ -898,6 +1059,91 @@ export default function HomePage() {
         <div className={styles.navItem} onClick={() => router.push('/spp')}><Image src="/spp.svg" alt="SPP" width={24} height={24} /></div>
         <div className={styles.navItem} onClick={() => router.push('/user')}><Image src="/user.svg" alt="User" width={24} height={24} /></div>
       </nav>
+      {/* ── MODAL BANTUAN ── */}
+      {showBantuan && (
+        <div style={{
+          position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          zIndex: 2000, padding: 24, boxSizing: 'border-box' as const,
+        }} onClick={e => { if (e.target === e.currentTarget) closeBantuan(); }}>
+          <div style={{
+            width: '100%', maxWidth: 400, borderRadius: 24,
+            backgroundColor: isDark ? '#1E1E1E' : '#F5F4EE',
+            padding: '28px 24px', boxSizing: 'border-box' as const,
+            boxShadow: '0 20px 60px rgba(0,0,0,0.2)',
+            animation: 'popupFadeIn 0.22s ease',
+          }}>
+            {bantuanStep === 'form' ? (
+              <>
+                <div style={{ fontSize: 18, fontWeight: 700, color: isDark ? '#F0F0F0' : '#1A1A1A', marginBottom: 20 }}>
+                  Form Bantuan
+                </div>
+                {[
+                  { label: 'Nama Lengkap', key: 'nama', placeholder: 'Masukkan nama Anda', type: 'text' },
+                  { label: 'Kendala', key: 'kendala', placeholder: 'Ceritakan kendala Anda...', type: 'textarea' },
+                  { label: 'Nomor HP / Email (opsional)', key: 'kontak', placeholder: 'Untuk dihubungi', type: 'text' },
+                ].map(field => (
+                  <div key={field.key} style={{ marginBottom: 14 }}>
+                    <div style={{ fontSize: 13, color: '#A8A8A8', marginBottom: 6 }}>{field.label}</div>
+                    {field.type === 'textarea' ? (
+                      <textarea
+                        rows={3}
+                        placeholder={field.placeholder}
+                        value={bantuanData[field.key as keyof typeof bantuanData]}
+                        onChange={e => setBantuanData({ ...bantuanData, [field.key]: e.target.value })}
+                        style={{
+                          width: '100%', border: `1.5px solid ${isDark ? '#2E2E2E' : '#E0E0E0'}`,
+                          borderRadius: 12, padding: '10px 14px', fontFamily: 'inherit', fontSize: 14,
+                          backgroundColor: isDark ? '#2A2A2A' : '#fff', color: isDark ? '#F0F0F0' : '#333',
+                          outline: 'none', resize: 'none', boxSizing: 'border-box' as const,
+                        }}
+                      />
+                    ) : (
+                      <input
+                        type="text"
+                        placeholder={field.placeholder}
+                        value={bantuanData[field.key as keyof typeof bantuanData]}
+                        onChange={e => setBantuanData({ ...bantuanData, [field.key]: e.target.value })}
+                        style={{
+                          width: '100%', border: `1.5px solid ${isDark ? '#2E2E2E' : '#E0E0E0'}`,
+                          borderRadius: 12, padding: '12px 14px', fontFamily: 'inherit', fontSize: 14,
+                          backgroundColor: isDark ? '#2A2A2A' : '#fff', color: isDark ? '#F0F0F0' : '#333',
+                          outline: 'none', boxSizing: 'border-box' as const,
+                        }}
+                      />
+                    )}
+                  </div>
+                ))}
+                <button onClick={handleKirimBantuan} style={{
+                  width: '100%', height: 48, backgroundColor: '#FFB843', border: 'none',
+                  borderRadius: 50, fontSize: 15, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
+                  color: '#1A1A1A', marginTop: 4,
+                }}>Kirim ke Admin</button>
+                <div style={{ marginTop: 12, fontSize: 12, color: '#A8A8A8', textAlign: 'center' }}>
+                  Kontak Admin: <span style={{ color: '#888' }}>081152003008 (WhatsApp)</span>
+                </div>
+              </>
+            ) : (
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: 40, marginBottom: 12 }}>✓</div>
+                <div style={{ fontSize: 18, fontWeight: 700, color: isDark ? '#F0F0F0' : '#1A1A1A', marginBottom: 8 }}>Terkirim!</div>
+                <div style={{ fontSize: 14, color: '#A8A8A8', marginBottom: 24, lineHeight: 1.6 }}>
+                  Kami akan menghubungi Anda melalui WhatsApp atau email setelah kendala ditangani.
+                </div>
+                <button onClick={closeBantuan} style={{
+                  width: '100%', height: 48, backgroundColor: '#FFB843', border: 'none',
+                  borderRadius: 50, fontSize: 15, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
+                  color: '#1A1A1A',
+                }}>Kembali</button>
+                <div style={{ marginTop: 12, fontSize: 12, color: '#A8A8A8' }}>
+                  Kontak Admin: <span style={{ color: '#888' }}>081152003008 (WhatsApp)</span>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

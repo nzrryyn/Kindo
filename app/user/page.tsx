@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import styles from './user.module.css';
@@ -15,7 +15,9 @@ export default function UserGuru() {
   const [tanggal, setTanggal] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [editingNama, setEditingNama] = useState(false);
+  const [profilePhoto, setProfilePhoto] = useState('');
   const [toast, setToast] = useState({ visible: false, message: '', isError: false });
+  const photoRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const savedDark = localStorage.getItem('kindo_dark');
@@ -24,6 +26,7 @@ export default function UserGuru() {
     const saved = JSON.parse(localStorage.getItem('kindo_profile_guru') || '{}');
     if (saved.namaLengkap) setNamaLengkap(saved.namaLengkap);
     if (saved.tanggal) setTanggal(saved.tanggal);
+    if (saved.photo) setProfilePhoto(saved.photo);
   }, []);
 
   const showToast = (msg: string, isError = false) => {
@@ -32,15 +35,31 @@ export default function UserGuru() {
   };
 
   const handleSimpan = () => {
-    const profile = { namaLengkap, tanggal };
+    const profile = { namaLengkap, tanggal, photo: profilePhoto };
     localStorage.setItem('kindo_profile_guru', JSON.stringify(profile));
     if (password) {
-      // In a real app this would update the actual password
-      showToast('Profil & password berhasil disimpan!');
-    } else {
-      showToast('Profil berhasil disimpan!');
+      // Update password di kindo_custom_passwords
+      const pwds = JSON.parse(localStorage.getItem('kindo_custom_passwords') || '{}');
+      pwds['4555'] = password;
+      localStorage.setItem('kindo_custom_passwords', JSON.stringify(pwds));
+      setPassword('');
     }
+    showToast(password ? 'Profil & password berhasil disimpan!' : 'Profil berhasil disimpan!');
     setEditingNama(false);
+  };
+
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      const result = ev.target?.result as string;
+      setProfilePhoto(result);
+      // Langsung simpan foto ke profile
+      const saved = JSON.parse(localStorage.getItem('kindo_profile_guru') || '{}');
+      localStorage.setItem('kindo_profile_guru', JSON.stringify({ ...saved, photo: result }));
+    };
+    reader.readAsDataURL(file);
   };
 
   const CalendarIcon = () => (
@@ -101,16 +120,22 @@ export default function UserGuru() {
         <div className={styles.topSection}>
           <div className={styles.pageTitle}>Profil</div>
           <div className={styles.avatarWrap}>
-            <div className={styles.avatarCircle}>
-              <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke={isDark ? '#F0F0F0' : '#A8A8A8'} strokeWidth="1.5">
-                <rect x="3" y="3" width="18" height="18" rx="3"/>
-                <circle cx="12" cy="9" r="3"/>
-                <path d="M3 20c0-4 2.7-7 9-7s9 3 9 7"/>
-              </svg>
+            <div className={styles.avatarCircle} onClick={() => photoRef.current?.click()} style={{ cursor: 'pointer' }}>
+              {profilePhoto
+                ? <img src={profilePhoto} alt="profil" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                : (
+                  <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke={isDark ? '#F0F0F0' : '#A8A8A8'} strokeWidth="1.5">
+                    <rect x="3" y="3" width="18" height="18" rx="3"/>
+                    <circle cx="12" cy="9" r="3"/>
+                    <path d="M3 20c0-4 2.7-7 9-7s9 3 9 7"/>
+                  </svg>
+                )
+              }
             </div>
-            <button className={styles.avatarEditBtn}>
+            <button className={styles.avatarEditBtn} onClick={() => photoRef.current?.click()}>
               <EditIcon />
             </button>
+            <input ref={photoRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handlePhotoUpload} />
           </div>
         </div>
 

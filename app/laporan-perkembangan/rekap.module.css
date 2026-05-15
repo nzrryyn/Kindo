@@ -69,6 +69,62 @@
 }
 .dark .selectKelas { background-color: #2A2A2A; border-color: #3A3A3A; color: #F0F0F0; }
 
+/* ── SEARCH BAR ── */
+.searchWrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.searchIcon {
+  position: absolute;
+  left: 14px;
+  pointer-events: none;
+  flex-shrink: 0;
+}
+
+.searchBar {
+  width: 100%;
+  height: 38px;
+  padding: 0 36px 0 38px;
+  border: 1.5px solid #D9D9D9;
+  border-radius: 20px;
+  background-color: #F8F7F2;
+  color: #333;
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color .2s;
+  box-sizing: border-box;
+}
+.searchBar::placeholder { color: #A8A8A8; }
+.searchBar:focus { border-color: #FFB843; }
+.dark .searchBar { background-color: #2A2A2A; border-color: #3A3A3A; color: #F0F0F0; }
+.dark .searchBar:focus { border-color: #FFB843; }
+
+.searchClear {
+  position: absolute;
+  right: 12px;
+  width: 20px;
+  height: 20px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border-radius: 50%;
+  transition: background .15s;
+}
+.searchEmpty {
+  grid-column: span 2;
+  text-align: center;
+  padding: 32px 0;
+  font-size: 13px;
+  color: #A8A8A8;
+}
+
 /* Grid siswa — 2 kolom */
 .siswaGrid {
   display: grid;
@@ -146,18 +202,6 @@
   gap: 3px;
 }
 
-.gradeSquare {
-  width: 34px;
-  height: 34px;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 13px;
-  font-weight: 700;
-  color: #F8F7F2;
-}
-
 .gradeKey {
   font-size: 9px;
   color: #A8A8A8;
@@ -219,6 +263,8 @@
   object-fit: cover;
 }
 
+
+
 /* Shortcut unduh 52×35 */
 .btnUnduhShortcut {
   width: 52px;
@@ -237,12 +283,15 @@
 .dark .btnUnduhShortcut { background-color: #2A2A2A; }
 .dark .btnUnduhShortcut:hover { background-color: #333; }
 
-/* Tombol lihat selengkapnya 146×33 */
-.horizontal {
-display: flex;
-flex-direction: row;
+/* Baris bawah card: unduh + lihat selengkapnya */
+.cardActions {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
 }
 
+/* Tombol lihat selengkapnya 146×33 */
 .btnLihat {
   width: 146px;
   height: 33px;
@@ -257,6 +306,40 @@ flex-direction: row;
   transition: opacity .2s;
 }
 .btnLihat:hover { opacity: 0.85; }
+
+/* Grade square — angka hitam */
+.gradeSquare {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  color: #1A1A1A;
+}
+
+/* ── TOMBOL LIHAT SEMUA (bawah grid) ── */
+.btnLihatSemua {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin: 4px auto 0;
+  height: 37px;
+  padding: 0 20px;
+  background-color: #F8F7F2;
+  border: 1.5px solid #D9D9D9;
+  border-radius: 30px;
+  color: #555;
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background .2s, border-color .2s;
+}
+.btnLihatSemua:hover { background-color: #F0EFE9; border-color: #A8A8A8; }
+.dark .btnLihatSemua { background-color: #1E1E1E; border-color: #3A3A3A; color: #A8A8A8; }
 
 /* ══════════════════════════════════════
    DETAIL CARD — 289×614px, r30
@@ -282,17 +365,31 @@ flex-direction: row;
   to   { opacity: 1; transform: translateX(0); }
 }
 
-/* Foto siswa detail 130×130, r15 */
+/* Header detail: foto kiri + nama/kelas kanan — sesuai referensi */
+.detailHeader {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 14px;
+}
+
+.detailHeaderInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* Foto siswa detail 90×90, r15 */
 .detailFotoBox {
-  width: 130px;
-  height: 130px;
+  width: 90px;
+  height: 90px;
   border-radius: 15px;
   background-color: #E8E8E8;
   display: flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  align-self: center;
+  flex-shrink: 0;
 }
 .dark .detailFotoBox { background-color: #2A2A2A; }
 
@@ -300,15 +397,12 @@ flex-direction: row;
   font-size: 15px;
   font-weight: 700;
   color: #333;
-  text-align: center;
 }
 .dark .detailName { color: #F0F0F0; }
 
 .detailKelas {
   font-size: 12px;
   color: #A8A8A8;
-  text-align: center;
-  margin-top: -6px;
 }
 
 /* Kegiatan section */
@@ -387,8 +481,8 @@ flex-direction: row;
 
 /* Dropdown aspek 250×39.69, r15 */
 .dropdownAspek {
-  width: 150px;
-  height: 39px;
+  width: 113px;
+  height: 26px;
   border: 1.5px solid #D9D9D9;
   border-radius: 15px;
   background-color: #F8F7F2;
@@ -429,7 +523,7 @@ flex-direction: row;
 .nilaiBox {
   width: 62px;
   height: 24px;
-  border-radius: 6px;
+  border-radius: 15px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -550,11 +644,73 @@ flex-direction: row;
   .contentWrap { flex-direction: column; padding: 20px 16px 0; }
   .mainCard { width: 100%; }
   .siswaGrid { grid-template-columns: 1fr; }
-  .detailCard { width: 100%; }
+  .detailCard {
+    /* Desktop stacking — full width */
+    width: 100%;
+    min-height: unset;
+  }
 }
 
 @media (max-width: 600px) {
   .contentWrap { padding: 16px 12px 0; }
   .highlightCard { width: 100%; }
   .aspekKurangRow { width: 100%; }
+
+  /* Bottom sheet untuk detail card di mobile */
+  .detailCard {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    min-height: unset;
+    max-height: 85vh;
+    overflow-y: auto;
+    border-radius: 24px 24px 0 0;
+    border: none;
+    border-top: 1.5px solid #E8E8E8;
+    padding: 20px 16px 100px; /* padding bawah untuk navbar */
+    z-index: 500;
+    animation: slideUp .3s ease;
+    box-shadow: 0 -8px 40px rgba(0,0,0,0.15);
+  }
+  .dark .detailCard { border-top-color: #2E2E2E; }
+
+  @keyframes slideUp {
+    from { transform: translateY(100%); opacity: 0; }
+    to   { transform: translateY(0); opacity: 1; }
+  }
+
+  /* Tambah handle bar di atas bottom sheet */
+  .detailCard::before {
+    content: '';
+    display: block;
+    width: 40px;
+    height: 4px;
+    background-color: #D9D9D9;
+    border-radius: 2px;
+    margin: 0 auto 16px;
+  }
+
+  /* Overlay gelap di belakang bottom sheet */
+  .detailOverlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.4);
+    z-index: 499;
+    animation: fadeIn .25s ease;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+
+  /* Grid kegiatan di mobile — 2 kolom penuh */
+  .detailKegiatanGrid { grid-template-columns: repeat(2, 1fr); }
+  .detailKegiatanImg { width: 100%; height: 100px; }
+
+  /* Actions di mobile full width */
+  .detailActions { flex-direction: column; }
+  .btnUnduhPDF, .btnSelesai { width: 100%; }
 }

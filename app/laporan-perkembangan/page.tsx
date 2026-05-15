@@ -21,7 +21,7 @@ type DokItem = {
 };
 type Siswa = { id: string; name: string; kelas: string };
 
-const KELAS_LIST = ['Kelas A', 'Kelas B', 'Kelas C'];
+const KELAS_LIST = ['Kelas A', 'Kelas B', 'Kelas C', ,'Kelas D','Kelas E'];
 const ASPEK_LIST = ['Agama', 'Jati diri', 'Literasi & Sains'];
 const TAHUN_LIST = ['2023/2024', '2024/2025', '2025/2026'];
 
@@ -33,16 +33,14 @@ const GRADE_LABELS: Record<GradeKey, string> = {
   MB: 'Mulai Berkembang', BB: 'Belum Berkembang',
 };
 
+// Jumlah siswa sama dengan CLASS_DATA di home
+// Kelas A: 10, Kelas B: 8, Kelas C: 6
 const DUMMY_SISWA: Siswa[] = [
-  { id: 'KelasA_1', name: 'Siswa 1', kelas: 'Kelas A' },
-  { id: 'KelasA_2', name: 'Siswa 2', kelas: 'Kelas A' },
-  { id: 'KelasA_3', name: 'Siswa 3', kelas: 'Kelas A' },
-  { id: 'KelasA_4', name: 'Siswa 4', kelas: 'Kelas A' },
-  { id: 'KelasA_5', name: 'Siswa 5', kelas: 'Kelas A' },
-  { id: 'KelasA_6', name: 'Siswa 6', kelas: 'Kelas A' },
-  { id: 'KelasB_1', name: 'Siswa B1', kelas: 'Kelas B' },
-  { id: 'KelasB_2', name: 'Siswa B2', kelas: 'Kelas B' },
-  { id: 'KelasC_1', name: 'Siswa C1', kelas: 'Kelas C' },
+  ...Array.from({ length: 17 }, (_, i) => ({ id: `KelasA_${i + 1}`, name: `Siswa ${i + 1}`, kelas: 'Kelas A' })),
+  ...Array.from({ length: 16 }, (_, i) => ({ id: `KelasB_${i + 1}`, name: `Siswa ${i + 1}`, kelas: 'Kelas B' })),
+  ...Array.from({ length: 18  }, (_, i) => ({ id: `KelasC_${i + 1}`, name: `Siswa ${i + 1}`, kelas: 'Kelas C' })),
+  ...Array.from({ length: 15  }, (_, i) => ({ id: `KelasD_${i + 1}`, name: `Siswa ${i + 1}`, kelas: 'Kelas D' })),
+  ...Array.from({ length: 15  }, (_, i) => ({ id: `KelasE_${i + 1}`, name: `Siswa ${i + 1}`, kelas: 'Kelas E' })),
 ];
 
 export default function LaporanPage() {
@@ -54,7 +52,9 @@ export default function LaporanPage() {
   const [detailSiswa, setDetailSiswa] = useState<Siswa | null>(null);
   const [detailAspek, setDetailAspek] = useState(ASPEK_LIST[0]);
   const [detailTahun, setDetailTahun] = useState('2025/2026');
-  const [toast, setToast] = useState({ visible: false, msg: '', err: false });
+  const [toast, setToast] = useState({ visible: false , msg: '', err: false });
+  const [showAll, setShowAll] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     const savedDark = localStorage.getItem('kindo_dark');
@@ -94,7 +94,11 @@ export default function LaporanPage() {
   const getKegiatanSiswa = (siswaId: string): DokItem[] =>
     dokumentasi.filter(d => d.siswa.some(s => s.id === siswaId));
 
-  const filteredSiswa = DUMMY_SISWA.filter(s => s.kelas === selectedKelas);
+  const filteredSiswa = DUMMY_SISWA.filter(s =>
+    s.kelas === selectedKelas &&
+    s.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+  const visibleSiswa = showAll ? filteredSiswa : filteredSiswa.slice(0, 4);
 
   const handleUnduhPDF = (siswa: Siswa) => {
     showToast(`Mengunduh laporan ${siswa.name}...`);
@@ -112,6 +116,11 @@ export default function LaporanPage() {
   return (
     <div className={`${styles.page} ${isDark ? styles.dark : ''}`}>
 
+      {/* Overlay gelap untuk bottom sheet di mobile */}
+      {detailSiswa && (
+        <div className={styles.detailOverlay} onClick={() => setDetailSiswa(null)} />
+      )}
+
       {/* ── KONTEN UTAMA ── */}
       <div className={styles.contentWrap}>
 
@@ -123,15 +132,42 @@ export default function LaporanPage() {
             <select
               className={styles.selectKelas}
               value={selectedKelas}
-              onChange={e => setSelectedKelas(e.target.value)}
+              onChange={e => { setSelectedKelas(e.target.value); setShowAll(false); setDetailSiswa(null); setSearchQuery(''); }}
             >
               {KELAS_LIST.map(k => <option key={k} value={k}>{k}</option>)}
             </select>
           </div>
 
+          {/* Search bar */}
+          <div className={styles.searchWrap}>
+            <svg className={styles.searchIcon} width="15" height="15" viewBox="0 0 24 24" fill="none">
+              <circle cx="11" cy="11" r="7" stroke="#A8A8A8" strokeWidth="2"/>
+              <path d="M16.5 16.5L21 21" stroke="#A8A8A8" strokeWidth="2" strokeLinecap="round"/>
+            </svg>
+            <input
+              className={styles.searchBar}
+              type="text"
+              placeholder="Cari nama siswa..."
+              value={searchQuery}
+              onChange={e => { setSearchQuery(e.target.value); setShowAll(false); }}
+            />
+            {searchQuery && (
+              <button className={styles.searchClear} onClick={() => setSearchQuery('')}>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+                  <path d="M18 6L6 18M6 6l12 12" stroke="#A8A8A8" strokeWidth="2" strokeLinecap="round"/>
+                </svg>
+              </button>
+            )}
+          </div>
+
           {/* Grid siswa */}
           <div className={styles.siswaGrid}>
-            {filteredSiswa.map(siswa => {
+            {visibleSiswa.length === 0 && (
+              <div className={styles.searchEmpty}>
+                Tidak ada siswa dengan nama "{searchQuery}"
+              </div>
+            )}
+            {visibleSiswa.map(siswa => {
               const asm = getAssessment(siswa.id);
               const kegiatanSiswa = getKegiatanSiswa(siswa.id);
 
@@ -178,8 +214,10 @@ export default function LaporanPage() {
                         }
                       </div>
                     ))}
-                    {/* Shortcut unduh 52×35 */}
-                    <div className='horizontal'>
+                  </div>
+
+                  {/* Baris bawah: unduh + lihat selengkapnya horizontal */}
+                  <div className={styles.cardActions}>
                     <button
                       className={styles.btnUnduhShortcut}
                       onClick={() => handleUnduhPDF(siswa)}
@@ -187,31 +225,45 @@ export default function LaporanPage() {
                     >
                       <Image src="/unduh.svg" alt="Unduh" width={16} height={16} />
                     </button>
-                  </div>
-
-                  {/* Tombol lihat selengkapnya 146×33 */}
-                  <button
-                    className={styles.btnLihat}
-                    onClick={() => { setDetailSiswa(siswa); setDetailAspek(ASPEK_LIST[0]); }}
-                  >
-                    Lihat selengkapnya
-                  </button>
+                    <button
+                      className={styles.btnLihat}
+                      onClick={() => { setDetailSiswa(siswa); setDetailAspek(ASPEK_LIST[0]); }}
+                    >
+                      Lihat selengkapnya
+                    </button>
                   </div>
                 </div>
               );
             })}
           </div>
+
+          {/* Tombol lihat selengkapnya — tampil jika masih ada siswa tersembunyi */}
+          {filteredSiswa.length > 4 && (
+            <button
+              className={styles.btnLihatSemua}
+              onClick={() => setShowAll(prev => !prev)}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                <path d={showAll ? 'M18 15l-6-6-6 6' : 'M6 9l6 6 6-6'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+              {showAll ? 'Sembunyikan' : `Lihat selengkapnya (${filteredSiswa.length - 4} lagi)`}
+            </button>
+          )}
         </div>
 
         {/* ══ DETAIL CARD — 289×614 ══ */}
         {detailSiswa && (
           <div className={styles.detailCard}>
-            {/* Foto + nama */}
-            <div className={styles.detailFotoBox}>
-              <Image src="/icongmbr.svg" alt={detailSiswa.name} width={40} height={40} style={{ opacity: 0.3 }} />
+            {/* Foto kiri + nama/kelas kanan — sesuai referensi */}
+            <div className={styles.detailHeader}>
+              <div className={styles.detailFotoBox}>
+                <Image src="/icongmbr.svg" alt={detailSiswa.name} width={40} height={40} style={{ opacity: 0.3 }} />
+              </div>
+              <div className={styles.detailHeaderInfo}>
+                <div className={styles.detailName}>{detailSiswa.name}</div>
+                <div className={styles.detailKelas}>{detailSiswa.kelas}</div>
+              </div>
             </div>
-            <div className={styles.detailName}>{detailSiswa.name}</div>
-            <div className={styles.detailKelas}>{detailSiswa.kelas}</div>
 
             {/* Kegiatan siswa */}
             <div className={styles.detailSection}>

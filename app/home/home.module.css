@@ -15,6 +15,8 @@
   transition: background-color 0.3s, color 0.3s;
 }
 
+
+
 /* ========================================= */
 /* DARK MODE                                 */
 /* ========================================= */
@@ -493,6 +495,17 @@
   object-fit: cover;
 }
 
+/* Overlay transparan di atas video — bracket + scan line */
+.scanOverlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  overflow: hidden;
+}
+
 /* Area bracket kosong saat kamera belum aktif */
 .scanBracketArea {
   width: 60%;
@@ -501,17 +514,52 @@
 }
 
 /* Empat sudut bracket */
-.bracketTL, .bracketTR, .bracketBL, .bracketBR {
+.bracketTL, .bracketTR, .bracketBL, .bracketBR,
+.bracketTL_success, .bracketTR_success, .bracketBL_success, .bracketBR_success {
   position: absolute;
   width: 36px;
   height: 36px;
-  border-color: #A8A8A8;
   border-style: solid;
+  transition: border-color 0.2s;
 }
-.bracketTL { top: 0; left: 0; border-width: 4px 0 0 4px; border-radius: 6px 0 0 0; }
-.bracketTR { top: 0; right: 0; border-width: 4px 4px 0 0; border-radius: 0 6px 0 0; }
-.bracketBL { bottom: 0; left: 0; border-width: 0 0 4px 4px; border-radius: 0 0 0 6px; }
-.bracketBR { bottom: 0; right: 0; border-width: 0 4px 4px 0; border-radius: 0 0 6px 0; }
+.bracketTL, .bracketTR, .bracketBL, .bracketBR {
+  border-color: rgba(255,255,255,0.85);
+}
+.bracketTL_success, .bracketTR_success, .bracketBL_success, .bracketBR_success {
+  border-color: #22c55e;
+}
+.bracketTL, .bracketTL_success { top: 20%; left: 20%; border-width: 4px 0 0 4px; border-radius: 6px 0 0 0; }
+.bracketTR, .bracketTR_success { top: 20%; right: 20%; border-width: 4px 4px 0 0; border-radius: 0 6px 0 0; }
+.bracketBL, .bracketBL_success { bottom: 20%; left: 20%; border-width: 0 0 4px 4px; border-radius: 0 0 0 6px; }
+.bracketBR, .bracketBR_success { bottom: 20%; right: 20%; border-width: 0 4px 4px 0; border-radius: 0 0 6px 0; }
+
+/* Scan line animasi */
+@keyframes scanMove {
+  0%   { top: 20%; }
+  50%  { top: 76%; }
+  100% { top: 20%; }
+}
+.scanLine {
+  position: absolute;
+  left: 20%;
+  width: 60%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #FFB843, transparent);
+  border-radius: 2px;
+  animation: scanMove 2s ease-in-out infinite;
+  box-shadow: 0 0 6px rgba(255,184,67,0.6);
+}
+
+/* Flash hijau saat QR terdeteksi */
+.qrSuccessFlash {
+  position: absolute;
+  inset: 0;
+  background: rgba(34,197,94,0.18);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+}
 
 /* Status pills */
 .scanStatusList {
