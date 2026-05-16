@@ -11,9 +11,6 @@ export default function LandingPage() {
           <Image src="/logokindo.svg" alt="Logo Kindo" width={100} height={40} />
         </div>
         <div className={styles.navLinks}>
-          <Link href="/">Beranda</Link>
-          <Link href="#">Kontak</Link>
-          <Link href="#">Alamat</Link>
         </div>
       </nav>
 

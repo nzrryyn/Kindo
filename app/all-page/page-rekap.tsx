@@ -66,15 +66,6 @@ export default function LaporanPage() {
     // Load nama siswa yang sudah diedit (shared dengan home)
     const savedNames = JSON.parse(localStorage.getItem('kindo_student_names') || '{}');
     setStudentNames(savedNames);
-
-    // Sinkron nama siswa jika diubah dari halaman lain
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'kindo_student_names' && e.newValue) {
-        setStudentNames(JSON.parse(e.newValue));
-      }
-    };
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
   const showToast = (msg: string, err = false) => {
