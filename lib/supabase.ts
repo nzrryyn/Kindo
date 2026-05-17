@@ -323,3 +323,64 @@ export function subscribeIzinRequests(onChange: () => void) {
     )
     .subscribe();
 }
+// ─────────────────────────────────────────
+// profile_guru
+// Tabel: profiles_guru (id text primary key, nama text, tanggal_lahir text, photo_url text, updated_at timestamp)
+// ─────────────────────────────────────────
+const GURU_ID = 'guru_utama';
+
+export async function fetchProfileGuru(): Promise<{ nama?: string; tanggal_lahir?: string; photo_url?: string } | null> {
+  const { data, error } = await supabase
+    .from('profiles_guru')
+    .select('nama, tanggal_lahir, photo_url')
+    .eq('id', GURU_ID)
+    .single();
+  if (error) { console.error('fetchProfileGuru:', error); return null; }
+  return data;
+}
+
+export async function upsertProfileGuru(fields: {
+  nama?: string; tanggal_lahir?: string; photo_url?: string;
+}): Promise<void> {
+  const { error } = await supabase
+    .from('profiles_guru')
+    .upsert({ id: GURU_ID, ...fields, updated_at: new Date().toISOString() });
+  if (error) { console.error('upsertProfileGuru:', error); throw error; }
+}
+
+export async function uploadProfilePhoto(file: File): Promise<string | null> {
+  const ext = file.name.split('.').pop();
+  const path = `guru/${GURU_ID}.${ext}`;
+  const { error: uploadErr } = await supabase.storage
+    .from('profile-photos')
+    .upload(path, file, { upsert: true });
+  if (uploadErr) { console.error('uploadProfilePhoto:', uploadErr); return null; }
+  const { data } = supabase.storage.from('profile-photos').getPublicUrl(path);
+  return data.publicUrl;
+}
+
+// ─────────────────────────────────────────
+// profile_ortu
+// Tabel: profiles_ortu (siswa_id text primary key, nama text, tanggal_lahir text, updated_at timestamp)
+// ─────────────────────────────────────────
+export async function fetchProfileOrtu(
+  siswaId: string
+): Promise<{ nama?: string; tanggal_lahir?: string } | null> {
+  const { data, error } = await supabase
+    .from('profiles_ortu')
+    .select('nama, tanggal_lahir')
+    .eq('siswa_id', siswaId)
+    .single();
+  if (error) { console.error('fetchProfileOrtu:', error); return null; }
+  return data;
+}
+
+export async function upsertProfileOrtu(
+  siswaId: string,
+  fields: { nama?: string; tanggal_lahir?: string }
+): Promise<void> {
+  const { error } = await supabase
+    .from('profiles_ortu')
+    .upsert({ siswa_id: siswaId, ...fields, updated_at: new Date().toISOString() });
+  if (error) { console.error('upsertProfileOrtu:', error); throw error; }
+}
