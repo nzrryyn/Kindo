@@ -40,6 +40,8 @@ export default function HomePage() {
 
   // State Kegiatan
   const [kegiatanHarian, setKegiatanHarian] = useState([{ id: 1, text: '', time: '08:00' }]);
+  // Guard: hanya simpan ke Supabase setelah data pertama kali berhasil di-load dari DB
+  const kegiatanLoadedRef = useRef(false);
 
   // State Absen Guru — dual session (datang & pulang)
   type AbsenSesi = { done: boolean; time: string; telat: boolean } | null;
@@ -132,6 +134,8 @@ export default function HomePage() {
     // Kegiatan diload dari Supabase agar sinkron dengan halaman ortu
     fetchKegiatanHarian(new Date().toISOString().split('T')[0]).then(rows => {
       if (rows.length > 0) setKegiatanHarian(rows);
+      // Tandai sudah load — useEffect save hanya boleh jalan setelah ini
+      kegiatanLoadedRef.current = true;
     });
 
     // Load absen datang & pulang — reset otomatis jika bukan hari ini
@@ -157,9 +161,13 @@ export default function HomePage() {
 
     fetchAttendance().then(setAttendanceData);
 
+    // fetchAssessments harus mengembalikan Record<string, StudentAssessment>
+    // dengan key format "siswaId__tahun" agar cocok dengan cara baca di openPenilaian & handleSimpanPenilaian.
+    // Pastikan fungsi fetchAssessments di lib/supabase.ts melakukan mapping:
+    //   rows.reduce((acc, row) => { acc[`${row.siswa_id}__${row.tahun}`] = row.data; return acc; }, {})
     fetchAssessments().then(setAllAssessments);
 
-    // Load profile nama dari halaman user
+    // Load profile nama dari halaman user — localStorage sebagai cache saja
     const savedProfile = JSON.parse(localStorage.getItem('kindo_profile_guru') || '{}');
     if (savedProfile.namaLengkap) setProfileName(savedProfile.namaLengkap);
     if (savedProfile.photo) setProfilePhoto(savedProfile.photo);
@@ -180,7 +188,8 @@ export default function HomePage() {
 
   // 2. Save Triggers — kegiatan disimpan ke Supabase saat ada perubahan
   useEffect(() => {
-    if (!isClient || kegiatanHarian.length === 0) return;
+    // Jangan simpan sebelum data dari Supabase selesai di-load — mencegah overwrite dengan initial state kosong
+    if (!isClient || !kegiatanLoadedRef.current || kegiatanHarian.length === 0) return;
     const today = new Date().toISOString().split('T')[0];
     upsertKegiatanHarian(today, kegiatanHarian);
   }, [kegiatanHarian, isClient]);
@@ -468,14 +477,20 @@ export default function HomePage() {
     }));
   };
 
-  const handleSimpanPenilaian = () => {
+  const handleSimpanPenilaian = async () => {
     if (activeStudent) {
-      // Key format baru: `siswaId__tahun` agar tiap tahun tersimpan terpisah
+      // Key format: `siswaId__tahun` — konsisten dengan fetchAssessments dan openPenilaian
       const key = `${activeStudent.id}__${currentForm.tahun}`;
       const updatedAll = { ...allAssessments, [key]: currentForm };
       setAllAssessments(updatedAll);
-      upsertAssessment(activeStudent.id, currentForm);
-      showToast("Berhasil disimpan!");
+      try {
+        await upsertAssessment(activeStudent.id, currentForm);
+        showToast("Berhasil disimpan!");
+      } catch (err) {
+        console.error('handleSimpanPenilaian gagal:', err);
+        showToast("Gagal menyimpan. Coba lagi.", true);
+        return;
+      }
       setActiveStudent(null);
     }
   };
@@ -498,22 +513,32 @@ export default function HomePage() {
   };
 
   // Simpan nama siswa → Supabase
-  const handleSaveName = (siswaId: string) => {
+  const handleSaveName = async (siswaId: string) => {
     const trimmed = tempName.trim();
     if (!trimmed) { setEditingName(false); return; }
     const updated = { ...studentNames, [siswaId]: trimmed };
     setStudentNames(updated);
-    upsertStudentName(siswaId, trimmed);
+    try {
+      await upsertStudentName(siswaId, trimmed);
+    } catch (err) {
+      console.error('handleSaveName gagal:', err);
+      showToast('Gagal menyimpan nama. Coba lagi.', true);
+    }
     setEditingName(false);
   };
 
   // Simpan nama dari grid → Supabase
-  const handleSaveGridName = (siswaId: string) => {
+  const handleSaveGridName = async (siswaId: string) => {
     const trimmed = gridTempName.trim();
     if (trimmed) {
       const updated = { ...studentNames, [siswaId]: trimmed };
       setStudentNames(updated);
-      upsertStudentName(siswaId, trimmed);
+      try {
+        await upsertStudentName(siswaId, trimmed);
+      } catch (err) {
+        console.error('handleSaveGridName gagal:', err);
+        showToast('Gagal menyimpan nama. Coba lagi.', true);
+      }
     }
     setEditingStudentId(null);
   };

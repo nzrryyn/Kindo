@@ -24,7 +24,7 @@ export async function upsertStudentName(id: string, name: string): Promise<void>
   const { error } = await supabase
     .from('student_names')
     .upsert({ id, name, updated_at: new Date().toISOString() });
-  if (error) console.error('upsertStudentName:', error);
+  if (error) { console.error('upsertStudentName:', error); throw error; }
 }
 
 // ─────────────────────────────────────────
@@ -103,7 +103,7 @@ export async function upsertAssessment(siswaId: string, data: any): Promise<void
       { siswa_id: siswaId, tahun, data, updated_at: new Date().toISOString() },
       { onConflict: 'siswa_id,tahun' }
     );
-  if (error) console.error('upsertAssessment:', error);
+  if (error) { console.error('upsertAssessment:', error); throw error; }
 }
 
 // Realtime subscription — penilaian siswa
