@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import styles from './home.module.css';
 import jsQR from 'jsqr';
 import { supabase } from '@/lib/supabase';
+import { fetchProfileGuru } from '@/lib/supabase'; // tambah di bagian import atas
 import {
   fetchStudentNames, upsertStudentName, subscribeStudentNames,
   fetchStudentPhotos, upsertStudentPhoto, deleteStudentPhoto,
@@ -168,9 +169,17 @@ export default function HomePage() {
     fetchAssessments().then(setAllAssessments);
 
     // Load profile nama dari halaman user — localStorage sebagai cache saja
-    const savedProfile = JSON.parse(localStorage.getItem('kindo_profile_guru') || '{}');
-    if (savedProfile.namaLengkap) setProfileName(savedProfile.namaLengkap);
-    if (savedProfile.photo) setProfilePhoto(savedProfile.photo);
+    // GANTI ini:
+const savedProfile = JSON.parse(localStorage.getItem('kindo_profile_guru') || '{}');
+if (savedProfile.namaLengkap) setProfileName(savedProfile.namaLengkap);
+if (savedProfile.photo) setProfilePhoto(savedProfile.photo);
+
+// DENGAN ini:
+fetchProfileGuru().then(profile => {
+  if (!profile) return;
+  if (profile.nama) setProfileName(profile.nama);
+  if (profile.photo_url) setProfilePhoto(profile.photo_url);
+});
 
     // Load foto & nama siswa dari Supabase
     fetchStudentPhotos().then(setStudentPhotos);

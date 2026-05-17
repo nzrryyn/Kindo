@@ -60,6 +60,10 @@ export default function UserGuru() {
       }
 
       showToast(password ? 'Profil & password berhasil disimpan!' : 'Profil berhasil disimpan!');
+      localStorage.setItem('kindo_profile_guru', JSON.stringify({
+  namaLengkap: namaLengkap,
+  photo: profilePhoto,
+}));
       setEditingNama(false);
     } catch (e) {
       showToast('Gagal menyimpan profil.', true);
