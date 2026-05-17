@@ -80,6 +80,9 @@ export default function HomePage() {
   const [studentNames, setStudentNames] = useState<Record<string, string>>({});
   const [editingName, setEditingName] = useState(false);
   const [tempName, setTempName] = useState('');
+  // Edit nama langsung dari grid
+  const [editingStudentId, setEditingStudentId] = useState<string | null>(null);
+  const [gridTempName, setGridTempName] = useState('');
 
   // Bantuan form
   const [showBantuan, setShowBantuan] = useState(false);
@@ -495,6 +498,22 @@ export default function HomePage() {
     setEditingName(false);
   };
 
+  // Simpan nama dari edit langsung di grid
+  const handleSaveGridName = (siswaId: string) => {
+    const trimmed = gridTempName.trim();
+    if (trimmed) {
+      const updated = { ...studentNames, [siswaId]: trimmed };
+      setStudentNames(updated);
+      localStorage.setItem('kindo_student_names', JSON.stringify(updated));
+    }
+    setEditingStudentId(null);
+  };
+
+  const handleCancelGridEdit = () => {
+    setEditingStudentId(null);
+    setGridTempName('');
+  };
+
   // Nama display (custom atau default)
   const getSiswaName = (siswaId: string, defaultName: string) =>
     studentNames[siswaId] || defaultName;
@@ -893,7 +912,7 @@ export default function HomePage() {
 
             {/* Label di luar kotak */}
             <div className={styles.barKegiatanLabels}>
-              <span className={styles.barKegiatanLabel}>Data Siswa</span>
+              <span className={styles.barKegiatanLabel}>Absen Siswa</span>
               <span className={styles.barKegiatanLabel}>Dokumentasi Kegiatan</span>
               <span className={styles.barKegiatanLabel}>Laporan Perkembangan</span>
             </div>
@@ -954,7 +973,41 @@ export default function HomePage() {
                       />
                     </div>
                     <div className={styles.infoArea}>
-                      <div className={styles.studentName}>{getSiswaName(siswa.id, siswa.name)}</div>
+                      {/* Nama siswa — klik untuk edit langsung di grid */}
+                      {editingStudentId === siswa.id ? (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }} onClick={e => e.stopPropagation()}>
+                          <input
+                            autoFocus
+                            value={gridTempName}
+                            onChange={e => setGridTempName(e.target.value)}
+                            onKeyDown={e => {
+                              if (e.key === 'Enter') handleSaveGridName(siswa.id);
+                              if (e.key === 'Escape') handleCancelGridEdit();
+                            }}
+                            onBlur={() => handleSaveGridName(siswa.id)}
+                            style={{
+                              fontSize: 13, fontWeight: 600,
+                              border: 'none', borderBottom: '1.5px solid #FFB843',
+                              background: 'transparent', outline: 'none',
+                              color: isDark ? '#F0F0F0' : '#333',
+                              width: '100%', padding: '1px 0',
+                            }}
+                          />
+                        </div>
+                      ) : (
+                        <div
+                          className={styles.studentName}
+                          title="Klik untuk ubah nama"
+                          style={{ cursor: 'text' }}
+                          onClick={e => {
+                            e.stopPropagation();
+                            setEditingStudentId(siswa.id);
+                            setGridTempName(getSiswaName(siswa.id, siswa.name));
+                          }}
+                        >
+                          {getSiswaName(siswa.id, siswa.name)}
+                        </div>
+                      )}
                       <div>
                         <div className={styles.statusLabel}>Status Kehadiran</div>
                         <div className={styles.actionRow}>
@@ -1250,7 +1303,7 @@ export default function HomePage() {
                   Kami akan menghubungi Anda melalui WhatsApp atau email setelah kendala ditangani.
                 </div>
                 <button onClick={closeBantuan} style={{
-                  width: '100%', height: 48, backgroundColor: '#FFB843', border: 'none',
+                  width: '100%', height: 48, backgroundColor: '#FFB843', border: 'none', 
                   borderRadius: 50, fontSize: 15, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
                   color: '#1A1A1A',
                 }}>Kembali</button>

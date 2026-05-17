@@ -294,7 +294,7 @@ export default function HomeOrangTua() {
               <div style={{ fontSize: 12, color: '#A8A8A8', marginBottom: 12 }}>Orang Tua · {MY_CHILD.kelas}</div>
               <div style={{ height: 1, background: isDark ? '#2E2E2E' : '#E8E8E8', marginBottom: 12 }} />
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                <span style={{ fontSize: 13, color: isDark ? '#D0D0D0' : '#555' }}>{isDark ? '🌙 Mode Gelap' : '☀️ Mode Terang'}</span>
+                <span style={{ fontSize: 13, color: isDark ? '#D0D0D0' : '#555' }}>{isDark ? 'Mode Gelap' : 'Mode Terang'}</span>
                 <div onClick={toggleDark} style={{ width: 40, height: 22, borderRadius: 11, backgroundColor: isDark ? '#F8F7F2' : '#333', position: 'relative', cursor: 'pointer', transition: 'background .25s', flexShrink: 0 }}>
                   <div style={{ position: 'absolute', top: 3, left: isDark ? 21 : 3, width: 16, height: 16, borderRadius: '50%', backgroundColor: isDark ? '#333' : '#F8F7F2', transition: 'left .25s' }} />
                 </div>
