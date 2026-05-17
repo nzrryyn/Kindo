@@ -62,7 +62,7 @@ export default function Login() {
         >
           <div className={styles.radioCircle}></div>
           <div className={styles.icon}>
-            <Image src="/user.png" alt="Ikon Wali" width={28} height={28} />
+            <Image src="/user1.svg" alt="Ikon Wali" width={28} height={28} />
           </div>
           <div className={styles.textGroup}>
             <h3>Wali / Orang tua</h3>
