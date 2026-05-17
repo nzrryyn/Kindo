@@ -19,6 +19,7 @@ import {
   subscribeStudentNames,
   fetchAttendance,
   fetchAssessments,
+  subscribeAssessments,
   fetchKegiatanHarian,
   subscribeKegiatanHarian,
   fetchIzinByDateAndSiswa,
@@ -64,7 +65,7 @@ export default function HomeOrangTua() {
   const [isDark, setIsDark] = useState(false);
   const [kegiatanHarian, setKegiatanHarian] = useState<KegiatanItem[]>([]);
   const [statusAbsen, setStatusAbsen] = useState<string>('Belum tercatat');
-  const [assessment, setAssessment] = useState<StudentAssessment | null>(null);
+  const [allAssessments, setAllAssessments] = useState<Record<string, StudentAssessment>>({});
   const [izinType, setIzinType] = useState<'izin' | 'sakit'>('izin');
   const [izinAlasan, setIzinAlasan] = useState('');
   const [izinRequest, setIzinRequest] = useState<IzinRequest | null>(null);
@@ -106,6 +107,11 @@ export default function HomeOrangTua() {
       });
     });
 
+    // Realtime: penilaian diperbarui guru — langsung update tanpa reload
+    const asmSub = subscribeAssessments(all => {
+      setAllAssessments(all);
+    });
+
     const interval = setInterval(loadAll, 30000);
 
     return () => {
@@ -113,6 +119,7 @@ export default function HomeOrangTua() {
       supabase.removeChannel(nameSub);
       supabase.removeChannel(kegSub);
       supabase.removeChannel(izinSub);
+      supabase.removeChannel(asmSub);
     };
   }, []);
 
@@ -133,9 +140,9 @@ export default function HomeOrangTua() {
     const att = await fetchAttendance();
     setStatusAbsen(att[`${MY_CHILD.id}_${today}`] || 'Belum tercatat');
 
-    // Penilaian
+    // Penilaian — simpan semua, filter by periode dilakukan saat render
     const asm = await fetchAssessments();
-    setAssessment(asm[MY_CHILD.id] || null);
+    setAllAssessments(asm);
 
     // Nama anak
     const names = await fetchStudentNames();
@@ -221,6 +228,11 @@ export default function HomeOrangTua() {
 
   const getGradeCount = (g: string) =>
     assessment ? Object.values(assessment.aspects).filter(a => a.grade === g).length : 0;
+
+  // Ambil data penilaian anak sesuai periode yang dipilih ortu
+  // Field `tahun` di data assessment adalah tahun ajaran yang diisi guru (misal "2024/2025")
+  const rawAssessment = allAssessments[MY_CHILD.id] || null;
+  const assessment = rawAssessment?.tahun === selectedPeriode ? rawAssessment : null;
 
   const totalAspek = assessment ? Object.keys(assessment.aspects).length : 0;
   const kegiatanToShow = showAllKegiatan ? kegiatanHarian : kegiatanHarian.slice(0, 3);
