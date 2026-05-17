@@ -11,6 +11,7 @@ import {
   fetchStudentPhotos, upsertStudentPhoto, deleteStudentPhoto,
   fetchAttendance, upsertAttendance,
   fetchAssessments, upsertAssessment,
+  insertNotification,
 } from '@/lib/supabase';
 
 // Install dulu: npm install jsqr
@@ -354,26 +355,22 @@ export default function HomePage() {
     const nik = isClient ? (localStorage.getItem('kindo_nik') || 'Guru') : 'Guru';
     const today = now.toISOString().split('T')[0];
 
+    // Kirim notifikasi absen ke Supabase agar admin bisa lihat realtime
     const pushNotifAdmin = (sesi: 'datang' | 'pulang', telat: boolean) => {
-      const notifs = JSON.parse(localStorage.getItem('kindo_notif_absen') || '[]');
-      notifs.unshift({
-        id: Date.now(),
+      insertNotification('absen', {
         nik,
         sesi,
         telat,
         time: timeStr,
         date: dateStr,
         tanggal: today,
-        read: false,
       });
-      localStorage.setItem('kindo_notif_absen', JSON.stringify(notifs));
     };
 
     if (scanSesi === 'datang') {
       const telat = jam > JAM_08;
       const sesiObj = { done: true, time: `${timeStr}, ${dateStr}`, telat };
       setAbsenDatang(sesiObj);
-      // Simpan ke localStorage langsung (tidak tunggu useEffect)
       localStorage.setItem('absenDatang', JSON.stringify({ sesi: sesiObj, tanggal: today }));
       pushNotifAdmin('datang', telat);
       showToast(telat ? "Absen datang tercatat — Anda terlambat!" : "Berhasil absen datang!");
@@ -423,21 +420,33 @@ export default function HomePage() {
     }));
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setCurrentForm(prev => ({
-          ...prev,
-          aspects: {
-            ...prev.aspects,
-            [activeAspek]: { ...(prev.aspects[activeAspek] || {}), image: reader.result as string }
-          }
-        }));
-      };
-      reader.readAsDataURL(file);
+    if (!file || !activeStudent) return;
+
+    // Upload ke Supabase Storage bucket "assessment-images"
+    const ext = file.name.split('.').pop();
+    const path = `assessments/${activeStudent.id}/${activeAspek.replace(/\s+/g, '_')}.${ext}`;
+    const { error: uploadErr } = await supabase.storage
+      .from('assessment-images')
+      .upload(path, file, { upsert: true });
+
+    if (uploadErr) {
+      console.error('handleImageUpload:', uploadErr);
+      showToast('Gagal upload gambar. Coba lagi.', true);
+      return;
     }
+
+    const { data } = supabase.storage.from('assessment-images').getPublicUrl(path);
+    const url = data.publicUrl;
+
+    setCurrentForm(prev => ({
+      ...prev,
+      aspects: {
+        ...prev.aspects,
+        [activeAspek]: { ...(prev.aspects[activeAspek] || {}), image: url }
+      }
+    }));
   };
 
   const handleRemoveImage = (e: React.MouseEvent) => {
@@ -509,14 +518,15 @@ export default function HomePage() {
     studentNames[siswaId] || defaultName;
 
   // Kirim form bantuan
-  const handleKirimBantuan = () => {
+  const handleKirimBantuan = async () => {
     if (!bantuanData.nama.trim() || !bantuanData.kendala.trim()) {
       showToast('Mohon isi nama dan kendala.', true);
       return;
     }
-    const requests = JSON.parse(localStorage.getItem('kindo_bantuan') || '[]');
-    requests.unshift({ ...bantuanData, id: Date.now(), timestamp: Date.now(), read: false });
-    localStorage.setItem('kindo_bantuan', JSON.stringify(requests));
+    await insertNotification('bantuan', {
+      ...bantuanData,
+      timestamp: Date.now(),
+    });
     setBantuanStep('sent');
   };
 

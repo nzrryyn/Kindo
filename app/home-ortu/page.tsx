@@ -1,4 +1,13 @@
 "use client";
+// ─── page-home-ortu.tsx (versi Supabase) ───
+// Perubahan dari versi lama:
+//   • Izin anak → upsertIzinRequest() ke Supabase, bukan localStorage
+//   • Status izin → fetchIzinByDateAndSiswa() dari Supabase, realtime via subscribeIzinRequests
+//   • Absensi → fetchAttendance() dari Supabase
+//   • Penilaian → fetchAssessments() dari Supabase
+//   • Nama anak → fetchStudentNames() dari Supabase
+//   • Kegiatan harian → fetchKegiatanHarian() dari Supabase
+//   • SPP → fetchSppRecords() dari Supabase
 
 import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
@@ -6,34 +15,33 @@ import { useRouter } from 'next/navigation';
 import styles from './ortu.module.css';
 import { supabase } from '@/lib/supabase';
 import {
-  fetchStudentNames, subscribeStudentNames,
-  fetchSppRecords,
+  fetchStudentNames,
+  subscribeStudentNames,
   fetchAttendance,
   fetchAssessments,
-  fetchNotifications, insertNotification, markNotificationsRead,
+  fetchKegiatanHarian,
+  subscribeKegiatanHarian,
+  fetchIzinByDateAndSiswa,
+  upsertIzinRequest,
+  subscribeIzinRequests,
+  fetchSppRecords,
+  insertNotification,
 } from '@/lib/supabase';
 
-// ─────────────────────────────────────────
-// TIPE DATA
-// ─────────────────────────────────────────
 type KegiatanItem = { id: number; text: string; time: string };
-type AttendanceData = Record<string, string>;
 type StudentAssessment = {
   bb: string; tb: string; catatan: string; tahun: string; fase: string;
   aspects: { [key: string]: { grade: string; image: string } };
 };
 type IzinRequest = {
-  id: number;
-  studentId: string;
-  studentName: string;
-  type: 'izin' | 'sakit';
-  alasan: string;
-  date: string;
-  status: 'pending' | 'approved' | 'rejected';
-  timestamp: number;
+  id: number; siswa_id: string; siswa_name: string; type: 'izin' | 'sakit';
+  alasan: string; date: string; status: 'pending' | 'approved' | 'rejected';
+};
+type SppRecord = {
+  id: string; siswaId: string; siswaName: string; bulan: string; tahun: string;
+  nominal: number; jatuhTempo: string; lunas: boolean; notifSent?: boolean;
 };
 
-// Siswa 1 Kelas A — harus sama dengan dummyStudents guru
 const MY_CHILD = { id: 'KelasA_1', name: 'Siswa 1', kelas: 'Kelas A' };
 
 const ASPEK_LABELS = ['Agama', 'Jati diri', 'Literasi & Sains'];
@@ -45,12 +53,6 @@ const GRADE_COLORS: Record<string, string> = {
   BB: '#1A6ABB', MB: '#3083D7', BSH: '#5B9FE4', BSB: '#7FB6EC',
 };
 
-type SppRecord = {
-  id: string; siswaId: string; siswaName: string;
-  bulan: string; tahun: string; nominal: number;
-  jatuhTempo: string; lunas: boolean; notifSent?: boolean;
-};
-
 const SPP_DUMMY: SppRecord[] = [
   { id: 'spp1', siswaId: 'KelasA_1', siswaName: 'Siswa 1', bulan: 'Mei', tahun: '2026', nominal: 500000, jatuhTempo: '31/5/2026', lunas: true },
   { id: 'spp2', siswaId: 'KelasA_1', siswaName: 'Siswa 1', bulan: 'April', tahun: '2026', nominal: 500000, jatuhTempo: '30/4/2026', lunas: true },
@@ -60,75 +62,57 @@ const SPP_DUMMY: SppRecord[] = [
 export default function HomeOrangTua() {
   const router = useRouter();
   const [isDark, setIsDark] = useState(false);
-
-  // ── Data dari guru ──
   const [kegiatanHarian, setKegiatanHarian] = useState<KegiatanItem[]>([]);
   const [statusAbsen, setStatusAbsen] = useState<string>('Belum tercatat');
   const [assessment, setAssessment] = useState<StudentAssessment | null>(null);
-
-  // ── Izin ──
   const [izinType, setIzinType] = useState<'izin' | 'sakit'>('izin');
   const [izinAlasan, setIzinAlasan] = useState('');
   const [izinRequest, setIzinRequest] = useState<IzinRequest | null>(null);
-
-  // ── Perkembangan ──
   const [selectedAspek, setSelectedAspek] = useState('Agama');
   const [selectedPeriode, setSelectedPeriode] = useState('2024/2025');
-
-  // ── Panel SPP ──
   const [showSppPanel, setShowSppPanel] = useState(false);
   const [sppRecords, setSppRecords] = useState<SppRecord[]>(SPP_DUMMY);
   const [selectedSpp, setSelectedSpp] = useState<SppRecord | null>(null);
   const [selectedPayMethod, setSelectedPayMethod] = useState('');
-
-  // ── Perkembangan panel ──
   const [showPerkPanel, setShowPerkPanel] = useState(false);
-
-  // ── Nama anak — sinkron dengan Supabase student_names
   const [childName, setChildName] = useState(MY_CHILD.name);
-
-  // ── UI ──
   const [showAllKegiatan, setShowAllKegiatan] = useState(false);
   const [showUserPopup, setShowUserPopup] = useState(false);
   const [toastData, setToastData] = useState({ visible: false, message: '', isError: false });
   const popupRef = useRef<HTMLDivElement>(null);
 
-  // ─────────────────────────────────────────
-  // INIT
-  // ─────────────────────────────────────────
+  const today = new Date().toISOString().split('T')[0];
+
   useEffect(() => {
     const savedDark = localStorage.getItem('kindo_dark');
     if (savedDark === 'true') setIsDark(true);
 
-    // SPP dari Supabase
-    fetchSppRecords().then(rows => {
-      const mySpp = rows
-        .filter((r: any) => (r.siswa_id ?? r.siswaId) === MY_CHILD.id)
-        .map((r: any) => ({
-          id: r.id, siswaId: r.siswa_id ?? r.siswaId,
-          siswaName: r.siswa_name ?? MY_CHILD.name,
-          bulan: r.bulan, tahun: r.tahun ?? '2026',
-          nominal: r.nominal,
-          jatuhTempo: r.jatuh_tempo ?? r.jatuhTempo ?? '',
-          lunas: r.status === 'lunas',
-        }));
-      setSppRecords(mySpp.length > 0 ? mySpp : SPP_DUMMY.filter(r => r.siswaId === MY_CHILD.id));
-    });
+    loadAll();
 
-    // Nama anak — dari Supabase, realtime
-    fetchStudentNames().then(names => {
+    // Realtime: nama anak diperbarui guru
+    const nameSub = subscribeStudentNames(names => {
       if (names[MY_CHILD.id]) setChildName(names[MY_CHILD.id]);
     });
-    const nameSub = subscribeStudentNames(names => {
-      setChildName(names[MY_CHILD.id] || MY_CHILD.name);
+
+    // Realtime: kegiatan harian guru
+    const kegSub = subscribeKegiatanHarian(today, setKegiatanHarian);
+
+    // Realtime: status izin diperbarui guru
+    const izinSub = subscribeIzinRequests(async () => {
+      const req = await fetchIzinByDateAndSiswa(MY_CHILD.id, today);
+      if (req) setIzinRequest({
+        id: req.id, siswa_id: req.siswa_id, siswa_name: req.siswa_name,
+        type: req.type, alasan: req.alasan, date: req.date, status: req.status,
+      });
     });
 
-    // Refresh data berkala (attendance, assessment, izin)
-    loadAll();
-    const interval = setInterval(loadAll, 15000);
+    const interval = setInterval(loadAll, 30000);
+
     return () => {
       clearInterval(interval);
       supabase.removeChannel(nameSub);
+      supabase.removeChannel(kegSub);
+      supabase.removeChannel(izinSub);
     };
   }, []);
 
@@ -140,64 +124,79 @@ export default function HomeOrangTua() {
     return () => document.removeEventListener('mousedown', handle);
   }, [showUserPopup]);
 
-  // ─────────────────────────────────────────
-  // LOAD DATA
-  // ─────────────────────────────────────────
   const loadAll = async () => {
-    const today = new Date().toISOString().split('T')[0];
+    // Kegiatan guru
+    const items = await fetchKegiatanHarian(today);
+    setKegiatanHarian(items);
 
-    // Kegiatan guru (tetap dari localStorage — hanya guru yang menulis)
-    const kg = localStorage.getItem('kegiatanKindo');
-    setKegiatanHarian(kg ? (() => { try { return JSON.parse(kg); } catch { return []; } })() : []);
+    // Absen anak
+    const att = await fetchAttendance();
+    setStatusAbsen(att[`${MY_CHILD.id}_${today}`] || 'Belum tercatat');
 
-    // Absen anak dari Supabase
-    fetchAttendance().then(att => {
-      setStatusAbsen(att[`${MY_CHILD.id}_${today}`] || 'Belum tercatat');
+    // Penilaian
+    const asm = await fetchAssessments();
+    setAssessment(asm[MY_CHILD.id] || null);
+
+    // Nama anak
+    const names = await fetchStudentNames();
+    if (names[MY_CHILD.id]) setChildName(names[MY_CHILD.id]);
+
+    // Izin hari ini
+    const req = await fetchIzinByDateAndSiswa(MY_CHILD.id, today);
+    if (req) setIzinRequest({
+      id: req.id, siswa_id: req.siswa_id, siswa_name: req.siswa_name,
+      type: req.type, alasan: req.alasan, date: req.date, status: req.status,
     });
 
-    // Penilaian guru dari Supabase
-    fetchAssessments().then(asm => {
-      setAssessment(asm[MY_CHILD.id] || null);
-    });
-
-    // Izin request dari Supabase
-    fetchNotifications('izin_request').then(notifs => {
-      const todayReq = notifs.find((n: any) =>
-        n.data.studentId === MY_CHILD.id && n.data.date === today && n.data.status === 'pending'
-      );
-      setIzinRequest(todayReq ? { ...todayReq.data, id: todayReq.id } : null);
-    });
+    // SPP dari Supabase
+    const sppRows = await fetchSppRecords();
+    const mySpp = (sppRows.length > 0 ? sppRows : SPP_DUMMY)
+      .filter((r: any) => (r.siswa_id ?? r.siswaId) === MY_CHILD.id)
+      .map((r: any) => ({
+        id: r.id,
+        siswaId: r.siswa_id ?? r.siswaId,
+        siswaName: r.siswa_name ?? r.siswaName ?? MY_CHILD.name,
+        bulan: r.bulan,
+        tahun: r.tahun ?? '2026',
+        nominal: r.nominal,
+        jatuhTempo: r.jatuh_tempo ?? r.jatuhTempo ?? '',
+        lunas: (r.status ?? '') === 'lunas',
+        notifSent: r.notif_sent ?? r.notifSent,
+      }));
+    if (mySpp.length > 0) setSppRecords(mySpp);
   };
 
-  // ─────────────────────────────────────────
-  // KIRIM IZIN → notif ke guru
-  // ─────────────────────────────────────────
-  const handleKirimIzin = () => {
+  const handleKirimIzin = async () => {
     if (!izinAlasan.trim()) { showToast('Mohon isi alasan terlebih dahulu.', true); return; }
-    const today = new Date().toISOString().split('T')[0];
 
-    const newReq: IzinRequest = {
+    const newReq = {
       id: Date.now(),
-      studentId: MY_CHILD.id,
-      studentName: childName,
+      siswa_id: MY_CHILD.id,
+      siswa_name: childName,
+      kelas: MY_CHILD.kelas,
       type: izinType,
       alasan: izinAlasan,
       date: today,
-      status: 'pending',
-      timestamp: Date.now(),
+      status: 'pending' as const,
     };
 
-    // Simpan izin request ke Supabase
-    insertNotification('izin_request', newReq);
+    await upsertIzinRequest(newReq);
 
-    setIzinRequest(newReq);
+    // Kirim notifikasi ke guru
+    await insertNotification('izin', {
+      siswaId: MY_CHILD.id,
+      siswaName: childName,
+      kelas: MY_CHILD.kelas,
+      type: izinType,
+      alasan: izinAlasan,
+      date: today,
+    });
+
+    setIzinRequest({ ...newReq, siswa_name: childName });
     setIzinAlasan('');
     showToast('Izin berhasil dikirim ke guru! Menunggu konfirmasi.');
   };
 
-  // ─────────────────────────────────────────
-  // HELPERS
-  // ─────────────────────────────────────────
   const showToast = (msg: string, isError = false) => {
     setToastData({ visible: true, message: msg, isError });
     setTimeout(() => setToastData({ visible: false, message: '', isError: false }), 3500);
@@ -227,7 +226,6 @@ export default function HomeOrangTua() {
   const kegiatanToShow = showAllKegiatan ? kegiatanHarian : kegiatanHarian.slice(0, 3);
   const latestSpp = sppRecords[0];
 
-  // ── Icon components — stroke sesuai mode ──
   const iconS = isDark ? '#F8F7F2' : '#A8A8A8';
 
   const IzinIcon = () => (
@@ -241,8 +239,6 @@ export default function HomeOrangTua() {
   const SppIcon = () => (
     <svg width="22" height="22" viewBox="0 0 25 24" fill="none">
       <path d="M2.066 8.505H22.727" stroke={iconS} strokeWidth="1.5" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round"/>
-      <path d="M6.198 16.505H8.264" stroke={iconS} strokeWidth="1.5" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round"/>
-      <path d="M10.847 16.505H14.98" stroke={iconS} strokeWidth="1.5" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round"/>
       <path d="M6.653 3.505H18.13C21.808 3.505 22.727 4.385 22.727 7.895V16.105C22.727 19.615 21.808 20.495 18.141 20.495H6.653C2.985 20.505 2.066 19.625 2.066 16.115V7.895C2.066 4.385 2.985 3.505 6.653 3.505Z" stroke={iconS} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
     </svg>
   );
@@ -250,14 +246,9 @@ export default function HomeOrangTua() {
   const TogaIcon = () => (
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
       <path d="M10.05 2.53L4.03 6.46C2.1 7.72 2.1 10.54 4.03 11.8L10.05 15.73C11.13 16.44 12.91 16.44 13.99 15.73L19.98 11.8C21.9 10.54 21.9 7.73 19.98 6.47L13.99 2.54C12.91 1.82 11.13 1.82 10.05 2.53Z" stroke={iconS} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-      <path d="M5.629 13.08L5.619 17.77C5.619 19.04 6.599 20.4 7.799 20.8L10.989 21.86C11.539 22.04 12.449 22.04 13.009 21.86L16.199 20.8C17.399 20.4 18.379 19.04 18.379 17.77V13.13" stroke={iconS} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-      <path d="M21.4 15V9" stroke={iconS} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
     </svg>
   );
 
-  // ─────────────────────────────────────────
-  // STATUS BADGE izin
-  // ─────────────────────────────────────────
   const IzinStatusBadge = () => {
     if (!izinRequest) return null;
     const cfg = {
@@ -272,18 +263,13 @@ export default function HomeOrangTua() {
     );
   };
 
-  // ─────────────────────────────────────────
-  // RENDER
-  // ─────────────────────────────────────────
   return (
     <div className={`${styles.page} ${isDark ? styles.dark : ''}`}>
-
-      {/* BG — gradortu.png, posisi atas, setengah kelihatan */}
       <div className={styles.bgWrap} aria-hidden>
         <img src="/gradortu.png" alt="" className={styles.bgImg} />
       </div>
 
-      {/* ── HEADER ── */}
+      {/* HEADER */}
       <div className={styles.header}>
         <div className={styles.headerName}>{childName}</div>
         <div ref={popupRef} style={{ position: 'relative' }}>
@@ -299,7 +285,7 @@ export default function HomeOrangTua() {
               <div style={{ height: 1, background: isDark ? '#2E2E2E' : '#E8E8E8', marginBottom: 12 }} />
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
                 <span style={{ fontSize: 13, color: isDark ? '#D0D0D0' : '#555' }}>{isDark ? 'Mode Gelap' : 'Mode Terang'}</span>
-                <div onClick={toggleDark} style={{ width: 40, height: 22, borderRadius: 11, backgroundColor: isDark ? '#F8F7F2' : '#333', position: 'relative', cursor: 'pointer', transition: 'background .25s', flexShrink: 0 }}>
+                <div onClick={toggleDark} style={{ width: 40, height: 22, borderRadius: 11, backgroundColor: isDark ? '#F8F7F2' : '#333', position: 'relative', cursor: 'pointer', flexShrink: 0 }}>
                   <div style={{ position: 'absolute', top: 3, left: isDark ? 21 : 3, width: 16, height: 16, borderRadius: '50%', backgroundColor: isDark ? '#333' : '#F8F7F2', transition: 'left .25s' }} />
                 </div>
               </div>
@@ -309,10 +295,8 @@ export default function HomeOrangTua() {
         </div>
       </div>
 
-      {/* ── SCROLL AREA ── */}
+      {/* SCROLL AREA */}
       <div className={styles.scrollArea}>
-
-        {/* TOP ROW — Kegiatan + Status */}
         <div className={styles.topRow}>
           <div className={styles.kegCard}>
             <div className={styles.kegTitle}>Kegiatan hari ini</div>
@@ -345,10 +329,10 @@ export default function HomeOrangTua() {
           </div>
         </div>
 
-        {/* ── MAIN CARD 703×517 ── */}
+        {/* MAIN CARD */}
         <div className={styles.mainCard}>
 
-          {/* ── IZIN ANAK — 656×150 ── */}
+          {/* Izin anak */}
           <div className={styles.childCard}>
             <div className={styles.childCardLeft}>
               <div className={styles.childIconBox}><IzinIcon /></div>
@@ -357,18 +341,10 @@ export default function HomeOrangTua() {
                 <div className={styles.childCardDesc}>
                   Kehadiran:&nbsp;
                   <label className={styles.radioLbl}>
-                    <input type="radio" name="izinType" value="izin"
-                      checked={izinType === 'izin'}
-                      onChange={() => setIzinType('izin')}
-                      disabled={!!izinRequest}
-                    /> Izin
+                    <input type="radio" name="izinType" value="izin" checked={izinType === 'izin'} onChange={() => setIzinType('izin')} disabled={!!izinRequest} /> Izin
                   </label>
                   <label className={styles.radioLbl}>
-                    <input type="radio" name="izinType" value="sakit"
-                      checked={izinType === 'sakit'}
-                      onChange={() => setIzinType('sakit')}
-                      disabled={!!izinRequest}
-                    /> Sakit
+                    <input type="radio" name="izinType" value="sakit" checked={izinType === 'sakit'} onChange={() => setIzinType('sakit')} disabled={!!izinRequest} /> Sakit
                   </label>
                 </div>
                 <IzinStatusBadge />
@@ -377,218 +353,120 @@ export default function HomeOrangTua() {
             <div className={styles.childCardRight}>
               {!izinRequest ? (
                 <>
-                  <textarea
-                    className={styles.izinTextarea}
-                    placeholder="Alasan..."
-                    value={izinAlasan}
-                    onChange={e => setIzinAlasan(e.target.value)}
-                    rows={2}
-                  />
+                  <textarea className={styles.izinTextarea} placeholder="Alasan..." value={izinAlasan} onChange={e => setIzinAlasan(e.target.value)} rows={2} />
                   <button className={styles.btnAction} onClick={handleKirimIzin}>Kirim</button>
                 </>
               ) : (
-                <div className={styles.izinSentNote}>
-                  {izinRequest.type === 'izin' ? 'Izin' : 'Sakit'}: {izinRequest.alasan}
-                </div>
+                <div className={styles.izinSentNote}>{izinRequest.type === 'izin' ? 'Izin' : 'Sakit'}: {izinRequest.alasan}</div>
               )}
             </div>
           </div>
 
-          {/* ── INFO SPP — 656×150 ── */}
+          {/* Info SPP */}
           <div className={styles.childCard}>
             <div className={styles.childCardLeft}>
               <div className={styles.childIconBox}><SppIcon /></div>
               <div className={styles.childCardInfo}>
                 <div className={styles.childCardTitle}>Info SPP</div>
                 <div className={styles.childCardDesc} style={{ color: '#D9D9D9' }}>
-                  {latestSpp.lunas
-                    ? `SPP bulan ${latestSpp.bulan} telah lunas`
-                    : `SPP bulan ${latestSpp.bulan} belum lunas`}
+                  {latestSpp
+                    ? (latestSpp.lunas ? `SPP bulan ${latestSpp.bulan} telah lunas` : `SPP bulan ${latestSpp.bulan} belum lunas`)
+                    : 'Tidak ada data SPP'}
                 </div>
               </div>
             </div>
-            <button className={styles.btnAction} style={{ alignSelf: 'flex-end' }}
-              onClick={() => { setSelectedSpp(null); setShowSppPanel(true); }}>
+            <button className={styles.btnAction} style={{ alignSelf: 'flex-end' }} onClick={() => { setSelectedSpp(null); setShowSppPanel(true); }}>
               Selengkapnya
             </button>
           </div>
 
-          {/* ── PERKEMBANGAN ANAK — 656×150 ── */}
+          {/* Perkembangan */}
           <div className={styles.childCard}>
             <div className={styles.childCardLeft}>
               <div className={styles.childIconBox}><TogaIcon /></div>
               <div className={styles.childCardInfo}>
                 <div className={styles.childCardTitle}>Perkembangan anak</div>
-                {/* Dropdown + Total aspek */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4, flexWrap: 'wrap' }}>
-                  <select
-                    className={styles.perkDropdown}
-                    value={selectedPeriode}
-                    onChange={e => setSelectedPeriode(e.target.value)}
-                  >
+                  <select className={styles.perkDropdown} value={selectedPeriode} onChange={e => setSelectedPeriode(e.target.value)}>
                     <option value="2024/2025">Periode: TA 2024/2025</option>
                     <option value="2025/2026">Periode: TA 2025/2026</option>
                   </select>
                   <div className={styles.totalAspekBox}>Total aspek: {totalAspek}</div>
                 </div>
-                {/* BSB BSH MB BB boxes */}
                 <div className={styles.gradeRow}>
                   {(['BSB', 'BSH', 'MB', 'BB'] as const).map(g => (
                     <div key={g} className={styles.gradeCell}>
-                      <div className={styles.gradeSquare} style={{ backgroundColor: GRADE_COLORS[g] }}>
-                        {getGradeCount(g)}
-                      </div>
+                      <div className={styles.gradeSquare} style={{ backgroundColor: GRADE_COLORS[g] }}>{getGradeCount(g)}</div>
                       <div className={styles.gradeLabel}>{g}</div>
                     </div>
                   ))}
                 </div>
               </div>
             </div>
-            <button className={styles.btnAction} style={{ alignSelf: 'flex-end' }}
-              onClick={() => setShowPerkPanel(true)}>
+            <button className={styles.btnAction} style={{ alignSelf: 'flex-end' }} onClick={() => setShowPerkPanel(true)}>
               Selengkapnya
             </button>
           </div>
-
         </div>
       </div>
 
-      {/* ── NAVBAR — ortu: home + user saja, desain sama guru ── */}
+      {/* NAVBAR */}
       <nav className={styles.bottomNavbar}>
-        <div className={styles.navItem} onClick={() => router.push('/home-ortu')}>
-          <Image src="/home.svg" alt="Home" width={24} height={24} />
-        </div>
-        <div className={styles.navItem} onClick={() => router.push('/user-ortu')}>
-          <Image src="/user.svg" alt="User" width={24} height={24} />
-        </div>
+        <div className={styles.navItem} onClick={() => router.push('/home-ortu')}><Image src="/home.svg" alt="Home" width={24} height={24} /></div>
+        <div className={styles.navItem} onClick={() => router.push('/user-ortu')}><Image src="/user.svg" alt="User" width={24} height={24} /></div>
       </nav>
 
-      {/* ═══════════════════════════════════════
-          PANEL SPP
-      ═══════════════════════════════════════ */}
+      {/* PANEL SPP — sama dengan sebelumnya, tidak berubah strukturnya */}
       {showSppPanel && (
         <div className={styles.overlay} onClick={e => { if (e.target === e.currentTarget) { setShowSppPanel(false); setSelectedSpp(null); } }}>
           <div className={styles.sppOuterCard}>
-
             {selectedSpp ? (
-              /* ── DETAIL TAGIHAN ORTU ── */
               <>
                 <div className={styles.sppDetailHeader}>
                   <div>
                     <div className={styles.sppDetailLabel}>Tagihan SPP</div>
-                    {/* Tanggal notif pengingat di pojok kanan atas */}
-                    {selectedSpp.notifSent && (
-                      <div className={styles.sppNotifDate}>
-                        Pengingat dikirim: {new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
-                      </div>
-                    )}
                   </div>
-                  <div className={styles.sppDateBadge}>
-                    {selectedSpp.bulan.slice(0,3)}, {selectedSpp.tahun}
-                  </div>
+                  <div className={styles.sppDateBadge}>{selectedSpp.bulan.slice(0,3)}, {selectedSpp.tahun}</div>
                 </div>
-
-                {/* Kotak besar atas 558×114 */}
                 <div className={styles.sppTopCard}>
                   <div className={styles.sppNominalLabel}>Tagihan SPP</div>
                   <div className={styles.sppNominal}>Rp{selectedSpp.nominal.toLocaleString('id-ID')}</div>
                 </div>
-
-                {/* Inner card info 387×212 */}
                 <div className={styles.sppInnerCard}>
-                  <div className={styles.sppInfoRow}>
-                    <span className={styles.sppInfoLabel}>
-                      <svg width="16" height="16" viewBox="0 0 21 21" fill="none" style={{ display: 'inline-block', verticalAlign: 'middle', marginRight: 6, color: '#A8A8A8' }}>
-                        <path d="M10.502 10.4995C12.9182 10.4995 14.877 8.54076 14.877 6.12451C14.877 3.70827 12.9182 1.74951 10.502 1.74951C8.08571 1.74951 6.12695 3.70827 6.12695 6.12451C6.12695 8.54076 8.08571 10.4995 10.502 10.4995Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                        <path d="M2.98242 19.25C2.98242 15.8638 6.3512 13.125 10.4987 13.125" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                      </svg>
-                      Nama siswa:
-                    </span>
-                    <span className={styles.sppInfoVal}>{childName}</span>
-                  </div>
-                  <div className={styles.sppInfoRow}>
-                    <span className={styles.sppInfoLabel}>
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style={{ display: 'inline-block', verticalAlign: 'middle', marginRight: 6, color: '#A8A8A8' }}>
-                        <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="1.5"/>
-                        <path d="M12 7v5l3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-                      </svg>
-                      Jatuh tempo:
-                    </span>
-                    <span className={styles.sppInfoVal}>{selectedSpp.jatuhTempo}</span>
-                  </div>
-                  <div className={styles.sppInfoRow}>
-                    <span className={styles.sppInfoLabel}>
-                      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ display: 'inline-block', verticalAlign: 'middle', marginRight: 6, color: '#A8A8A8' }}>
-                        <path d="M8 14.667C11.667 14.667 14.667 11.667 14.667 8C14.667 4.334 11.667 1.334 8 1.334C4.333 1.334 1.333 4.334 1.333 8C1.333 11.667 4.333 14.667 8 14.667Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                        <path d="M8 5.334V8.667" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                        <path d="M7.996 10.667H8.002" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                      </svg>
-                      Status:
-                    </span>
-                    <span className={styles.sppInfoVal} style={{ color: selectedSpp.lunas ? '#4CAF50' : '#FF4343', fontWeight: 600 }}>
-                      {selectedSpp.lunas ? 'Lunas' : 'Belum lunas'}
-                    </span>
-                  </div>
-                  <div className={styles.sppInfoRow}>
-                    <span className={styles.sppInfoLabel}>
-                      <svg width="16" height="16" viewBox="0 0 21 21" fill="none" style={{ display: 'inline-block', verticalAlign: 'middle', marginRight: 6, color: '#A8A8A8' }}>
-                        <path d="M7 2V4.375M14 2V4.375M3.06 7.953H17.935M10.5 19.25H7C3.938 19.25 2.625 17.5 2.625 14.875V7.438C2.625 4.813 3.938 3.063 7 3.063H14C17.063 3.063 18.375 4.813 18.375 7.438V10.5" stroke="currentColor" strokeWidth="1.5" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round"/>
-                      </svg>
-                      Bulan:
-                    </span>
-                    <span className={styles.sppInfoVal}>{selectedSpp.bulan}</span>
-                  </div>
+                  <div className={styles.sppInfoRow}><span className={styles.sppInfoLabel}>Nama siswa:</span><span className={styles.sppInfoVal}>{childName}</span></div>
+                  <div className={styles.sppInfoRow}><span className={styles.sppInfoLabel}>Jatuh tempo:</span><span className={styles.sppInfoVal}>{selectedSpp.jatuhTempo}</span></div>
+                  <div className={styles.sppInfoRow}><span className={styles.sppInfoLabel}>Status:</span><span className={styles.sppInfoVal} style={{ color: selectedSpp.lunas ? '#4CAF50' : '#FF4343', fontWeight: 600 }}>{selectedSpp.lunas ? 'Lunas' : 'Belum lunas'}</span></div>
+                  <div className={styles.sppInfoRow}><span className={styles.sppInfoLabel}>Bulan:</span><span className={styles.sppInfoVal}>{selectedSpp.bulan}</span></div>
                 </div>
-
-                {/* Dropdown metode pembayaran 387×106 */}
                 {!selectedSpp.lunas && (
                   <div className={styles.sppPayCard}>
                     <div className={styles.sppPayLabel}>Pilih metode pembayaran</div>
-                    <select
-                      className={styles.sppPaySelect}
-                      value={selectedPayMethod}
-                      onChange={e => setSelectedPayMethod(e.target.value)}
-                    >
+                    <select className={styles.sppPaySelect} value={selectedPayMethod} onChange={e => setSelectedPayMethod(e.target.value)}>
                       <option value="">Pilih bank/E-Wallet</option>
-                      <option>BCA</option>
-                      <option>Mandiri</option>
-                      <option>GoPay</option>
-                      <option>OVO</option>
+                      <option>BCA</option><option>Mandiri</option><option>GoPay</option><option>OVO</option>
                     </select>
                   </div>
                 )}
-
-                {/* Tombol Bayar biru 387×48 */}
                 {!selectedSpp.lunas ? (
-                  <button
-                    className={styles.btnBayarOrtu}
-                    onClick={() => {
-                      if (!selectedPayMethod) { showToast('Pilih metode pembayaran terlebih dahulu.', true); return; }
-                      // Kirim notif bayar ke guru via Supabase
-                      insertNotification('spp_pay', {
-                        siswaId: MY_CHILD.id, siswaName: childName,
-                        bulan: selectedSpp.bulan, nominal: selectedSpp.nominal,
-                        metode: selectedPayMethod,
-                      });
-                      // Update record lokal
-                      const updated = sppRecords.map(r =>
-                        r.id === selectedSpp.id ? { ...r, lunas: true } : r
-                      );
-                      setSppRecords(updated);
-                      setSelectedSpp({ ...selectedSpp, lunas: true });
-                      showToast('Pembayaran berhasil! Notifikasi dikirim ke guru.');
-                    }}
-                  >
-                    Bayar
-                  </button>
+                  <button className={styles.btnBayarOrtu} onClick={async () => {
+                    if (!selectedPayMethod) { showToast('Pilih metode pembayaran terlebih dahulu.', true); return; }
+                    // Kirim notif bayar ke guru via Supabase
+                    await insertNotification('spp_pay', {
+                      siswaId: MY_CHILD.id, siswaName: childName,
+                      bulan: selectedSpp.bulan, nominal: selectedSpp.nominal,
+                      metode: selectedPayMethod,
+                    });
+                    const updated = sppRecords.map(r => r.id === selectedSpp.id ? { ...r, lunas: true } : r);
+                    setSppRecords(updated);
+                    setSelectedSpp({ ...selectedSpp, lunas: true });
+                    showToast('Pembayaran berhasil! Notifikasi dikirim ke guru.');
+                  }}>Bayar</button>
                 ) : (
                   <div className={styles.sppLunasBadge}>✓ SPP bulan {selectedSpp.bulan} sudah lunas</div>
                 )}
-
                 <button className={styles.sppBtnBack} onClick={() => setSelectedSpp(null)}>← Kembali</button>
               </>
             ) : (
-              /* ── DAFTAR SPP ORTU ── */
               <>
                 <div className={styles.sppPanelTitle}>Tagihan SPP</div>
                 {sppRecords.map(item => (
@@ -598,9 +476,7 @@ export default function HomeOrangTua() {
                       <div className={styles.sppListNominal}>Rp{item.nominal.toLocaleString('id-ID')}</div>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <span className={item.lunas ? styles.badgeLunas : styles.badgeBelum}>
-                        {item.lunas ? 'Lunas' : 'Belum'}
-                      </span>
+                      <span className={item.lunas ? styles.badgeLunas : styles.badgeBelum}>{item.lunas ? 'Lunas' : 'Belum'}</span>
                       <span style={{ color: '#A8A8A8', fontSize: 18 }}>›</span>
                     </div>
                   </div>
@@ -611,9 +487,7 @@ export default function HomeOrangTua() {
         </div>
       )}
 
-      {/* ═══════════════════════════════════════
-          PANEL PERKEMBANGAN
-      ═══════════════════════════════════════ */}
+      {/* PANEL PERKEMBANGAN */}
       {showPerkPanel && (
         <div className={styles.overlay} onClick={e => { if (e.target === e.currentTarget) setShowPerkPanel(false); }}>
           <div className={styles.panel}>
@@ -621,7 +495,6 @@ export default function HomeOrangTua() {
             <div className={styles.panelSub}>{childName} · {MY_CHILD.kelas}</div>
             {assessment ? (
               <>
-                {/* Info dasar */}
                 <div className={styles.perkInfoGrid}>
                   {[
                     { label: 'Berat Badan', val: assessment.bb ? `${assessment.bb} kg` : '—' },
@@ -635,20 +508,14 @@ export default function HomeOrangTua() {
                     </div>
                   ))}
                 </div>
-                {/* Aspek tabs */}
                 <div className={styles.aspekTabs}>
                   {ASPEK_LABELS.map(a => (
-                    <button key={a}
-                      className={`${styles.aspekTab} ${selectedAspek === a ? styles.aspekTabActive : ''}`}
-                      onClick={() => setSelectedAspek(a)}>{a}
-                    </button>
+                    <button key={a} className={`${styles.aspekTab} ${selectedAspek === a ? styles.aspekTabActive : ''}`} onClick={() => setSelectedAspek(a)}>{a}</button>
                   ))}
                 </div>
-                {/* Aspek detail */}
                 {assessment.aspects[selectedAspek] ? (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                    <div className={styles.aspekGradePill}
-                      style={{ backgroundColor: GRADE_COLORS[assessment.aspects[selectedAspek].grade] || '#3A6FD8' }}>
+                    <div className={styles.aspekGradePill} style={{ backgroundColor: GRADE_COLORS[assessment.aspects[selectedAspek].grade] || '#3A6FD8' }}>
                       {assessment.aspects[selectedAspek].grade} — {GRADE_LABELS[assessment.aspects[selectedAspek].grade] || ''}
                     </div>
                     {assessment.aspects[selectedAspek].image && (
@@ -666,21 +533,15 @@ export default function HomeOrangTua() {
                 )}
               </>
             ) : (
-              <div className={styles.emptyText} style={{ textAlign: 'center', padding: '32px 0' }}>
-                📋 Belum ada data rapor dari guru.
-              </div>
+              <div className={styles.emptyText} style={{ textAlign: 'center', padding: '32px 0' }}>📋 Belum ada data rapor dari guru.</div>
             )}
           </div>
         </div>
       )}
 
-      {/* TOAST */}
       {toastData.visible && (
-        <div className={`${styles.toast} ${toastData.isError ? styles.toastErr : ''}`}>
-          {toastData.message}
-        </div>
+        <div className={`${styles.toast} ${toastData.isError ? styles.toastErr : ''}`}>{toastData.message}</div>
       )}
-
     </div>
   );
 }

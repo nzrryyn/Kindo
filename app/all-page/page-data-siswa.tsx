@@ -4,6 +4,12 @@ import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import styles from './home.module.css';
+import { supabase } from '@/lib/supabase';
+import {
+  fetchStudentNames, upsertStudentName, subscribeStudentNames,
+  fetchStudentPhotos, upsertStudentPhoto,
+  fetchAttendance, upsertAttendance,
+} from '@/lib/supabase';
 
 const CLASS_DATA = {
   'Kelas A': 17, 'Kelas B': 16, 'Kelas C': 18, 'Kelas D': 15, 'Kelas E': 16,
@@ -42,26 +48,13 @@ export default function DataSiswaPage() {
     const savedDark = localStorage.getItem('kindo_dark');
     if (savedDark === 'true') setIsDark(true);
 
-    const savedPhotos = JSON.parse(localStorage.getItem('kindo_student_photos') || '{}');
-    setStudentPhotos(savedPhotos);
+    fetchStudentPhotos().then(setStudentPhotos);
+    fetchStudentNames().then(setStudentNames);
+    fetchAttendance().then(setAttendanceData);
 
-    const savedNames = JSON.parse(localStorage.getItem('kindo_student_names') || '{}');
-    setStudentNames(savedNames);
-
-    const savedAtt = JSON.parse(localStorage.getItem('kindo_attendance') || '{}');
-    setAttendanceData(savedAtt);
-
-    // Sinkron nama jika diubah dari halaman lain
-    const handleStorage = (e: StorageEvent) => {
-      if (e.key === 'kindo_student_names' && e.newValue)
-        setStudentNames(JSON.parse(e.newValue));
-      if (e.key === 'kindo_student_photos' && e.newValue)
-        setStudentPhotos(JSON.parse(e.newValue));
-      if (e.key === 'kindo_attendance' && e.newValue)
-        setAttendanceData(JSON.parse(e.newValue));
-    };
-    window.addEventListener('storage', handleStorage);
-    return () => window.removeEventListener('storage', handleStorage);
+    // Realtime: nama siswa sinkron
+    const nameSub = subscribeStudentNames(setStudentNames);
+    return () => { supabase.removeChannel(nameSub); };
   }, []);
 
   // ── HELPERS ──
@@ -73,17 +66,11 @@ export default function DataSiswaPage() {
   };
 
   // ── UPLOAD FOTO ──
-  const handleStudentPhotoUpload = (siswaId: string, e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleStudentPhotoUpload = async (siswaId: string, e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = ev => {
-      const result = ev.target?.result as string;
-      const updated = { ...studentPhotos, [siswaId]: result };
-      setStudentPhotos(updated);
-      localStorage.setItem('kindo_student_photos', JSON.stringify(updated));
-    };
-    reader.readAsDataURL(file);
+    const url = await upsertStudentPhoto(siswaId, file);
+    if (url) setStudentPhotos(prev => ({ ...prev, [siswaId]: url }));
   };
 
   // ── EDIT NAMA ──
@@ -92,7 +79,7 @@ export default function DataSiswaPage() {
     if (trimmed) {
       const updated = { ...studentNames, [siswaId]: trimmed };
       setStudentNames(updated);
-      localStorage.setItem('kindo_student_names', JSON.stringify(updated));
+      upsertStudentName(siswaId, trimmed);
     }
     setEditingStudentId(null);
   };
@@ -102,7 +89,7 @@ export default function DataSiswaPage() {
     const key = `${siswaId}_${selectedDate}`;
     const updated = { ...attendanceData, [key]: value };
     setAttendanceData(updated);
-    localStorage.setItem('kindo_attendance', JSON.stringify(updated));
+    upsertAttendance(siswaId, selectedDate, value);
   };
 
   // ── LIST SISWA ──

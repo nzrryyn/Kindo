@@ -4,6 +4,12 @@ import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import styles from './sppguru.module.css';
+import { supabase } from '@/lib/supabase';
+import {
+  fetchStudentNames, upsertStudentName, subscribeStudentNames,
+  fetchSppRecords, upsertSppRecord,
+  fetchNotifications, insertNotification, markNotificationsRead,
+} from '@/lib/supabase';
 
 type SppRecord = {
   id: string;
@@ -56,30 +62,33 @@ export default function SppGuruPage() {
     const savedDark = localStorage.getItem('kindo_dark');
     if (savedDark === 'true') setIsDark(true);
     loadAll();
-    const savedNames = JSON.parse(localStorage.getItem('kindo_student_names') || '{}');
-    setStudentNames(savedNames);
-
-    // Sinkron nama siswa jika diubah dari halaman lain
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'kindo_student_names' && e.newValue) {
-        setStudentNames(JSON.parse(e.newValue));
-      }
-    };
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
+    fetchStudentNames().then(setStudentNames);
+    const nameSub = subscribeStudentNames(setStudentNames);
+    return () => { supabase.removeChannel(nameSub); };
   }, []);
 
-  const loadAll = () => {
-    const saved: SppRecord[] = JSON.parse(localStorage.getItem('kindo_spp_records') || 'null') || DUMMY_SPP;
-    const pn: PayNotif[] = JSON.parse(localStorage.getItem('kindo_pay_notifs') || '[]');
-    const merged = saved.map(r => {
-      const paid = pn.find(n => n.siswaId === r.siswaId && n.bulan === r.bulan && !r.lunas);
-      if (paid) return { ...r, lunas: true, lunasAt: new Date(paid.timestamp).toLocaleDateString('id-ID') };
-      return r;
-    });
-    setRecords(merged);
-    localStorage.setItem('kindo_spp_records', JSON.stringify(merged));
-    setPayNotifs(pn);
+  const loadAll = async () => {
+    const rows = await fetchSppRecords();
+    // Map Supabase rows → SppRecord format
+    const mapped: SppRecord[] = (rows.length > 0 ? rows : DUMMY_SPP).map((r: any) => ({
+      id: r.id,
+      siswaId: r.siswa_id ?? r.siswaId,
+      siswaName: r.siswa_name ?? r.siswaName ?? r.siswa_id,
+      bulan: r.bulan,
+      tahun: r.tahun ?? '2026',
+      nominal: r.nominal,
+      jatuhTempo: r.jatuh_tempo ?? r.jatuhTempo ?? '',
+      lunas: r.status === 'lunas',
+      lunasAt: r.lunas_at ?? r.lunasAt,
+      notifSent: r.notif_sent ?? r.notifSent,
+    }));
+    setRecords(mapped);
+    const notifs = await fetchNotifications('spp_pay');
+    setPayNotifs(notifs.map((n: any) => ({
+      id: n.id, siswaId: n.data.siswaId, siswaName: n.data.siswaName,
+      bulan: n.data.bulan, nominal: n.data.nominal,
+      timestamp: new Date(n.created_at).getTime(), read: n.read,
+    })));
   };
 
   const showToast = (msg: string, err = false) => {
@@ -97,14 +106,13 @@ export default function SppGuruPage() {
     if (!trimmed) { setEditingStudentId(null); return; }
     const updated = { ...studentNames, [siswaId]: trimmed };
     setStudentNames(updated);
-    localStorage.setItem('kindo_student_names', JSON.stringify(updated));
+    upsertStudentName(siswaId, trimmed);
     setEditingStudentId(null);
     // Update nama di records juga
     const updatedRecords = records.map(r =>
       r.siswaId === siswaId ? { ...r, siswaName: trimmed } : r
     );
     setRecords(updatedRecords);
-    localStorage.setItem('kindo_spp_records', JSON.stringify(updatedRecords));
     if (selected?.siswaId === siswaId) setSelected({ ...selected, siswaName: trimmed });
   };
 
@@ -133,22 +141,20 @@ export default function SppGuruPage() {
         : r
     );
     setRecords(updated);
-    localStorage.setItem('kindo_spp_records', JSON.stringify(updated));
+    const rec = updated.find(r => r.id === selected.id);
+    if (rec) upsertSppRecord({ id: rec.id, siswa_id: rec.siswaId, bulan: rec.bulan, nominal: rec.nominal, status: rec.lunas ? 'lunas' : 'belum' });
     setSelected({ ...selected, jatuhTempo: jatuhTempoFormatted, bulan: editBulan });
     showToast('Perubahan disimpan!');
   };
 
   const handleKirimPengingat = (rec: SppRecord) => {
-    const notifs = JSON.parse(localStorage.getItem('kindo_notif_spp_ortu') || '[]');
-    notifs.unshift({
-      id: Date.now(), siswaId: rec.siswaId, siswaName: getSiswaName(rec.siswaId, rec.siswaName),
-      bulan: rec.bulan, tahun: rec.tahun, nominal: rec.nominal,
-      jatuhTempo: rec.jatuhTempo, timestamp: Date.now(), read: false,
+    insertNotification('spp_reminder', {
+      siswaId: rec.siswaId, siswaName: getSiswaName(rec.siswaId, rec.siswaName),
+      bulan: rec.bulan, tahun: rec.tahun, nominal: rec.nominal, jatuhTempo: rec.jatuhTempo,
     });
-    localStorage.setItem('kindo_notif_spp_ortu', JSON.stringify(notifs));
     const updated = records.map(r => r.id === rec.id ? { ...r, notifSent: true } : r);
     setRecords(updated);
-    localStorage.setItem('kindo_spp_records', JSON.stringify(updated));
+    upsertSppRecord({ id: rec.id, siswa_id: rec.siswaId, bulan: rec.bulan, nominal: rec.nominal, status: 'reminder_sent' });
     if (selected) setSelected({ ...selected, notifSent: true });
     showToast('Pengingat berhasil dikirim ke orang tua!');
   };
@@ -156,7 +162,7 @@ export default function SppGuruPage() {
   const markPayNotifsRead = () => {
     const updated = payNotifs.map(n => ({ ...n, read: true }));
     setPayNotifs(updated);
-    localStorage.setItem('kindo_pay_notifs', JSON.stringify(updated));
+    markNotificationsRead('spp_pay');
   };
 
   const unreadPay = payNotifs.filter(n => !n.read).length;

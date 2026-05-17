@@ -5,6 +5,13 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import styles from './home.module.css';
 import jsQR from 'jsqr';
+import { supabase } from '@/lib/supabase';
+import {
+  fetchStudentNames, upsertStudentName, subscribeStudentNames,
+  fetchStudentPhotos, upsertStudentPhoto, deleteStudentPhoto,
+  fetchAttendance, upsertAttendance,
+  fetchAssessments, upsertAssessment,
+} from '@/lib/supabase';
 
 // Install dulu: npm install jsqr
 // lalu import: import jsQR from 'jsqr';
@@ -144,37 +151,26 @@ export default function HomePage() {
       } catch { localStorage.removeItem('absenPulang'); }
     }
 
-    const savedAttendance = localStorage.getItem('kindo_attendance');
-    if (savedAttendance) setAttendanceData(JSON.parse(savedAttendance));
+    fetchAttendance().then(setAttendanceData);
 
-    const savedAssessments = localStorage.getItem('kindo_assessments');
-    if (savedAssessments) setAllAssessments(JSON.parse(savedAssessments));
+    fetchAssessments().then(setAllAssessments);
 
     // Load profile nama dari halaman user
     const savedProfile = JSON.parse(localStorage.getItem('kindo_profile_guru') || '{}');
     if (savedProfile.namaLengkap) setProfileName(savedProfile.namaLengkap);
     if (savedProfile.photo) setProfilePhoto(savedProfile.photo);
 
-    // Load foto siswa
-    const savedPhotos = JSON.parse(localStorage.getItem('kindo_student_photos') || '{}');
-    setStudentPhotos(savedPhotos);
+    // Load foto & nama siswa dari Supabase
+    fetchStudentPhotos().then(setStudentPhotos);
+    fetchStudentNames().then(setStudentNames);
 
-    // Load nama siswa yang sudah diedit
-    const savedNames = JSON.parse(localStorage.getItem('kindo_student_names') || '{}');
-    setStudentNames(savedNames);
-
-    // Sinkronkan studentNames jika diubah dari halaman lain (storage event)
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'kindo_student_names' && e.newValue) {
-        setStudentNames(JSON.parse(e.newValue));
-      }
-    };
-    window.addEventListener('storage', handleStorageChange);
+    // Realtime: nama siswa sinkron di semua halaman
+    const nameSub = subscribeStudentNames(setStudentNames);
 
     const timer = setInterval(() => setCurrentTime(new Date()), 1000 * 60);
     return () => {
       clearInterval(timer);
-      window.removeEventListener('storage', handleStorageChange);
+      supabase.removeChannel(nameSub);
     };
   }, []);
 
@@ -404,7 +400,7 @@ export default function HomePage() {
   const handleAttendanceChange = (studentId: string, status: string) => {
     const newData = { ...attendanceData, [`${studentId}_${selectedDate}`]: status };
     setAttendanceData(newData);
-    localStorage.setItem('kindo_attendance', JSON.stringify(newData));
+    upsertAttendance(studentId, selectedDate, status);
   };
 
   // ─────────────────────────────────────────
@@ -459,52 +455,46 @@ export default function HomePage() {
     if (activeStudent) {
       const updatedAll = { ...allAssessments, [activeStudent.id]: currentForm };
       setAllAssessments(updatedAll);
-      localStorage.setItem('kindo_assessments', JSON.stringify(updatedAll));
+      upsertAssessment(activeStudent.id, currentForm);
       showToast("Berhasil disimpan!");
       setActiveStudent(null);
     }
   };
 
-  // Upload foto siswa
-  const handleStudentPhotoUpload = (siswaId: string, e: React.ChangeEvent<HTMLInputElement>) => {
+  // Upload foto siswa → Supabase Storage
+  const handleStudentPhotoUpload = async (siswaId: string, e: React.ChangeEvent<HTMLInputElement>) => {
     e.stopPropagation();
     const file = e.target.files?.[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = ev => {
-      const result = ev.target?.result as string;
-      const updated = { ...studentPhotos, [siswaId]: result };
-      setStudentPhotos(updated);
-      localStorage.setItem('kindo_student_photos', JSON.stringify(updated));
-    };
-    reader.readAsDataURL(file);
+    const url = await upsertStudentPhoto(siswaId, file);
+    if (url) setStudentPhotos(prev => ({ ...prev, [siswaId]: url }));
   };
 
-  // Hapus foto siswa
+  // Hapus foto siswa dari Supabase
   const handleDeleteStudentPhoto = (siswaId: string) => {
     const updated = { ...studentPhotos };
     delete updated[siswaId];
     setStudentPhotos(updated);
-    localStorage.setItem('kindo_student_photos', JSON.stringify(updated));
+    deleteStudentPhoto(siswaId);
   };
 
-  // Simpan nama siswa yang diedit
+  // Simpan nama siswa → Supabase
   const handleSaveName = (siswaId: string) => {
     const trimmed = tempName.trim();
     if (!trimmed) { setEditingName(false); return; }
     const updated = { ...studentNames, [siswaId]: trimmed };
     setStudentNames(updated);
-    localStorage.setItem('kindo_student_names', JSON.stringify(updated));
+    upsertStudentName(siswaId, trimmed);
     setEditingName(false);
   };
 
-  // Simpan nama dari edit langsung di grid
+  // Simpan nama dari grid → Supabase
   const handleSaveGridName = (siswaId: string) => {
     const trimmed = gridTempName.trim();
     if (trimmed) {
       const updated = { ...studentNames, [siswaId]: trimmed };
       setStudentNames(updated);
-      localStorage.setItem('kindo_student_names', JSON.stringify(updated));
+      upsertStudentName(siswaId, trimmed);
     }
     setEditingStudentId(null);
   };
