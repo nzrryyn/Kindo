@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import styles from './userguru.module.css'; // share CSS, beda class tombol saja
+import styles from './userortu.module.css'; // share CSS, beda class tombol saja
 
 export default function UserOrtu() {
   const router = useRouter();
