@@ -12,6 +12,7 @@ import {
   fetchAttendance, upsertAttendance,
   fetchAssessments, upsertAssessment,
   insertNotification,
+  fetchKegiatanHarian, upsertKegiatanHarian,
 } from '@/lib/supabase';
 
 // Install dulu: npm install jsqr
@@ -128,8 +129,10 @@ export default function HomePage() {
     const savedDark = localStorage.getItem('kindo_dark');
     if (savedDark === 'true') setIsDark(true);
 
-    const savedKegiatan = localStorage.getItem('kegiatanKindo');
-    if (savedKegiatan) setKegiatanHarian(JSON.parse(savedKegiatan));
+    // Kegiatan diload dari Supabase agar sinkron dengan halaman ortu
+    fetchKegiatanHarian(new Date().toISOString().split('T')[0]).then(rows => {
+      if (rows.length > 0) setKegiatanHarian(rows);
+    });
 
     // Load absen datang & pulang — reset otomatis jika bukan hari ini
     const today = new Date().toISOString().split('T')[0];
@@ -175,9 +178,11 @@ export default function HomePage() {
     };
   }, []);
 
-  // 2. Save Triggers
+  // 2. Save Triggers — kegiatan disimpan ke Supabase saat ada perubahan
   useEffect(() => {
-    if (isClient) localStorage.setItem('kegiatanKindo', JSON.stringify(kegiatanHarian));
+    if (!isClient || kegiatanHarian.length === 0) return;
+    const today = new Date().toISOString().split('T')[0];
+    upsertKegiatanHarian(today, kegiatanHarian);
   }, [kegiatanHarian, isClient]);
 
   useEffect(() => {

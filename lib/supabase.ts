@@ -210,3 +210,116 @@ export function subscribeStudentNames(
     )
     .subscribe();
 }
+// ─────────────────────────────────────────
+// kegiatan_harian
+// Disimpan per tanggal agar ortu bisa lihat kegiatan hari ini
+// SQL: create table kegiatan_harian (
+//   tanggal date primary key,
+//   items   jsonb not null,
+//   updated_at timestamp default now()
+// );
+// alter publication supabase_realtime add table kegiatan_harian;
+// ─────────────────────────────────────────
+export async function fetchKegiatanHarian(
+  tanggal: string
+): Promise<{ id: number; text: string; time: string }[]> {
+  const { data, error } = await supabase
+    .from('kegiatan_harian')
+    .select('items')
+    .eq('tanggal', tanggal)
+    .single();
+  if (error || !data) return [];
+  return data.items || [];
+}
+
+export async function upsertKegiatanHarian(
+  tanggal: string,
+  items: { id: number; text: string; time: string }[]
+): Promise<void> {
+  const { error } = await supabase
+    .from('kegiatan_harian')
+    .upsert({ tanggal, items, updated_at: new Date().toISOString() });
+  if (error) console.error('upsertKegiatanHarian:', error);
+}
+
+export function subscribeKegiatanHarian(
+  tanggal: string,
+  onChange: (items: { id: number; text: string; time: string }[]) => void
+) {
+  return supabase
+    .channel('kegiatan_harian_changes')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'kegiatan_harian' },
+      async () => {
+        const items = await fetchKegiatanHarian(tanggal);
+        onChange(items);
+      }
+    )
+    .subscribe();
+}
+
+// ─────────────────────────────────────────
+// izin_requests
+// ─────────────────────────────────────────
+// SQL: create table izin_requests (
+//   id         bigint generated always as identity primary key,
+//   siswa_id   text not null,
+//   siswa_name text not null,
+//   kelas      text,
+//   type       text not null,   -- 'izin' | 'sakit'
+//   alasan     text not null,
+//   date       date not null,
+//   status     text default 'pending',
+//   created_at timestamp default now()
+// );
+// alter publication supabase_realtime add table izin_requests;
+
+export async function fetchIzinRequests(): Promise<any[]> {
+  const { data, error } = await supabase
+    .from('izin_requests')
+    .select('*')
+    .order('created_at', { ascending: false });
+  if (error) { console.error('fetchIzinRequests:', error); return []; }
+  return data || [];
+}
+
+export async function fetchIzinByDateAndSiswa(
+  siswaId: string, date: string
+): Promise<any | null> {
+  const { data, error } = await supabase
+    .from('izin_requests')
+    .select('*')
+    .eq('siswa_id', siswaId)
+    .eq('date', date)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .single();
+  if (error) return null;
+  return data;
+}
+
+export async function upsertIzinRequest(req: {
+  id?: number; siswa_id: string; siswa_name: string; kelas?: string;
+  type: string; alasan: string; date: string; status: string;
+}): Promise<void> {
+  const { error } = await supabase.from('izin_requests').upsert(req);
+  if (error) console.error('upsertIzinRequest:', error);
+}
+
+export async function updateIzinStatus(
+  id: number, status: 'approved' | 'rejected'
+): Promise<void> {
+  const { error } = await supabase
+    .from('izin_requests')
+    .update({ status })
+    .eq('id', id);
+  if (error) console.error('updateIzinStatus:', error);
+}
+
+export function subscribeIzinRequests(onChange: () => void) {
+  return supabase
+    .channel('izin_requests_changes')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'izin_requests' },
+      onChange
+    )
+    .subscribe();
+}

@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import styles from './dokumentasi.module.css';
 import { supabase } from '@/lib/supabase';
+// Bucket 'dokumentasi-images' harus dibuat di Supabase Storage (public read)
 import {
   fetchStudentNames, upsertStudentName, subscribeStudentNames,
   fetchDokumentasi, upsertDokumentasi, deleteDokumentasi,
@@ -90,12 +91,17 @@ export default function DokumentasiPage() {
   const handleImagePick = () => {
     const inp = document.createElement('input');
     inp.type = 'file'; inp.accept = 'image/*';
-    inp.onchange = (e: any) => {
+    inp.onchange = async (e: any) => {
       const file = e.target.files?.[0];
       if (!file) return;
-      const reader = new FileReader();
-      reader.onload = ev => setFormGambar(ev.target?.result as string);
-      reader.readAsDataURL(file);
+      const ext = file.name.split('.').pop();
+      const path = `dokumentasi/${Date.now()}.${ext}`;
+      const { error } = await supabase.storage
+        .from('dokumentasi-images')
+        .upload(path, file, { upsert: true });
+      if (error) { showToast('Gagal upload gambar.', true); return; }
+      const { data } = supabase.storage.from('dokumentasi-images').getPublicUrl(path);
+      setFormGambar(data.publicUrl);
     };
     inp.click();
   };

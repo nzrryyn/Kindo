@@ -94,7 +94,10 @@ export default function LaporanPage() {
     if (detailSiswa?.id === siswaId) setDetailSiswa({ ...detailSiswa, name: trimmed });
   };
 
-  const getAssessment = (siswaId: string): Assessment | null => assessments[siswaId] || null;
+  // Key format: `siswaId__tahun` — sesuai dengan supabase.ts yang baru
+  const getAssessment = (siswaId: string): Assessment | null =>
+    assessments[`${siswaId}__${detailTahun}`] ||
+    assessments[`${siswaId}__2024/2025`] || null;
 
   const getGradeCount = (siswaId: string, grade: GradeKey): number => {
     const a = getAssessment(siswaId);
