@@ -1,13 +1,5 @@
 "use client";
 // ─── page-home-ortu.tsx (versi Supabase) ───
-// Perubahan dari versi lama:
-//   • Izin anak → upsertIzinRequest() ke Supabase, bukan localStorage
-//   • Status izin → fetchIzinByDateAndSiswa() dari Supabase, realtime via subscribeIzinRequests
-//   • Absensi → fetchAttendance() dari Supabase
-//   • Penilaian → fetchAssessments() dari Supabase
-//   • Nama anak → fetchStudentNames() dari Supabase
-//   • Kegiatan harian → fetchKegiatanHarian() dari Supabase
-//   • SPP → fetchSppRecords() dari Supabase
 
 import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
@@ -23,7 +15,6 @@ import {
   fetchKegiatanHarian,
   subscribeKegiatanHarian,
   fetchIzinByDateAndSiswa,
-  upsertIzinRequest,
   subscribeIzinRequests,
   fetchSppRecords,
   insertNotification,
@@ -90,15 +81,12 @@ export default function HomeOrangTua() {
 
     loadAll();
 
-    // Realtime: nama anak diperbarui guru
     const nameSub = subscribeStudentNames(names => {
       if (names[MY_CHILD.id]) setChildName(names[MY_CHILD.id]);
     });
 
-    // Realtime: kegiatan harian guru
     const kegSub = subscribeKegiatanHarian(today, setKegiatanHarian);
 
-    // Realtime: status izin diperbarui guru
     const izinSub = subscribeIzinRequests(async () => {
       const req = await fetchIzinByDateAndSiswa(MY_CHILD.id, today);
       if (req) setIzinRequest({
@@ -107,7 +95,6 @@ export default function HomeOrangTua() {
       });
     });
 
-    // Realtime: penilaian diperbarui guru
     const asmSub = subscribeAssessments(setAllAssessments);
 
     const interval = setInterval(loadAll, 30000);
@@ -130,30 +117,24 @@ export default function HomeOrangTua() {
   }, [showUserPopup]);
 
   const loadAll = async () => {
-    // Kegiatan guru
     const items = await fetchKegiatanHarian(today);
     setKegiatanHarian(items);
 
-    // Absen anak
     const att = await fetchAttendance();
     setStatusAbsen(att[`${MY_CHILD.id}_${today}`] || 'Belum tercatat');
 
-    // Penilaian — key format: `${siswaId}__${tahun}`
     const asm = await fetchAssessments();
     setAllAssessments(asm);
 
-    // Nama anak
     const names = await fetchStudentNames();
     if (names[MY_CHILD.id]) setChildName(names[MY_CHILD.id]);
 
-    // Izin hari ini
     const req = await fetchIzinByDateAndSiswa(MY_CHILD.id, today);
     if (req) setIzinRequest({
       id: req.id, siswa_id: req.siswa_id, siswa_name: req.siswa_name,
       type: req.type, alasan: req.alasan, date: req.date, status: req.status,
     });
 
-    // SPP dari Supabase
     const sppRows = await fetchSppRecords();
     const mySpp = (sppRows.length > 0 ? sppRows : SPP_DUMMY)
       .filter((r: any) => (r.siswa_id ?? r.siswaId) === MY_CHILD.id)
@@ -171,21 +152,31 @@ export default function HomeOrangTua() {
     if (mySpp.length > 0) setSppRecords(mySpp);
   };
 
+  // ─── FIX: handleKirimIzin — hapus id dari payload, pakai insert langsung ───
   const handleKirimIzin = async () => {
     if (!izinAlasan.trim()) { showToast('Mohon isi alasan terlebih dahulu.', true); return; }
 
-    const newReq = {
-      id: Date.now(),
+    const payload = {
       siswa_id: MY_CHILD.id,
       siswa_name: childName,
       kelas: MY_CHILD.kelas,
       type: izinType,
       alasan: izinAlasan,
       date: today,
-      status: 'pending' as const,
+      status: 'pending',
     };
 
-    await upsertIzinRequest(newReq);
+    const { data, error } = await supabase
+      .from('izin_requests')
+      .insert(payload)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('handleKirimIzin:', error);
+      showToast('Gagal mengirim izin. Coba lagi.', true);
+      return;
+    }
 
     // Kirim notifikasi ke guru
     await insertNotification('izin', {
@@ -197,7 +188,15 @@ export default function HomeOrangTua() {
       date: today,
     });
 
-    setIzinRequest({ ...newReq, siswa_name: childName });
+    setIzinRequest({
+      id: data.id,
+      siswa_id: data.siswa_id,
+      siswa_name: data.siswa_name,
+      type: data.type,
+      alasan: data.alasan,
+      date: data.date,
+      status: 'pending',
+    });
     setIzinAlasan('');
     showToast('Izin berhasil dikirim ke guru! Menunggu konfirmasi.');
   };
@@ -224,7 +223,6 @@ export default function HomeOrangTua() {
     'Alfa': 'Anak tidak hadir (Alfa)',
   }[statusAbsen] || 'Ananda belum tiba di sekolah');
 
-  // Ambil penilaian sesuai periode dipilih — key: `siswaId__tahun`
   const assessment: StudentAssessment | null =
     allAssessments[`${MY_CHILD.id}__${selectedPeriode}`] || null;
 
@@ -360,13 +358,16 @@ export default function HomeOrangTua() {
               </div>
             </div>
             <div className={styles.childCardRight}>
-              {!izinRequest ? (
-                <>
-                  <textarea className={styles.izinTextarea} placeholder="Alasan..." value={izinAlasan} onChange={e => setIzinAlasan(e.target.value)} rows={2} />
+              {!izinRequest && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-end' }}>
+                  <input
+                    className={styles.izinInput}
+                    placeholder="Alasan..."
+                    value={izinAlasan}
+                    onChange={e => setIzinAlasan(e.target.value)}
+                  />
                   <button className={styles.btnAction} onClick={handleKirimIzin}>Kirim</button>
-                </>
-              ) : (
-                <div className={styles.izinSentNote}>{izinRequest.type === 'izin' ? 'Izin' : 'Sakit'}: {izinRequest.alasan}</div>
+                </div>
               )}
             </div>
           </div>
@@ -377,21 +378,19 @@ export default function HomeOrangTua() {
               <div className={styles.childIconBox}><SppIcon /></div>
               <div className={styles.childCardInfo}>
                 <div className={styles.childCardTitle}>Info SPP</div>
-                <div className={styles.childCardDesc} style={{ color: '#D9D9D9' }}>
+                <div className={styles.childCardDesc}>
                   {latestSpp
-                    ? (latestSpp.lunas ? `SPP bulan ${latestSpp.bulan} telah lunas` : `SPP bulan ${latestSpp.bulan} belum lunas`)
-                    : 'Tidak ada data SPP'}
+                    ? `SPP bulan ${latestSpp.bulan} ${latestSpp.lunas ? 'sudah lunas' : 'belum lunas'}`
+                    : 'Memuat data SPP...'}
                 </div>
               </div>
             </div>
-            <button className={styles.btnAction} style={{ alignSelf: 'flex-end' }} onClick={() => { setSelectedSpp(null); setShowSppPanel(true); }}>
-              Selengkapnya
-            </button>
+            <button className={styles.btnAction} onClick={() => setShowSppPanel(true)}>Selengkapnya</button>
           </div>
 
-          {/* Perkembangan */}
-          <div className={styles.childCard}>
-            <div className={styles.childCardLeft}>
+          {/* Perkembangan anak */}
+          <div className={styles.childCard} style={{ flexDirection: 'column', alignItems: 'stretch' }}>
+            <div className={styles.childCardLeft} style={{ marginBottom: 8 }}>
               <div className={styles.childIconBox}><TogaIcon /></div>
               <div className={styles.childCardInfo}>
                 <div className={styles.childCardTitle}>Perkembangan anak</div>
@@ -425,7 +424,7 @@ export default function HomeOrangTua() {
         <div className={styles.navItem} onClick={() => router.push('/user-ortu')}><Image src="/user.svg" alt="User" width={24} height={24} /></div>
       </nav>
 
-      {/* PANEL SPP — sama dengan sebelumnya, tidak berubah strukturnya */}
+      {/* PANEL SPP */}
       {showSppPanel && (
         <div className={styles.overlay} onClick={e => { if (e.target === e.currentTarget) { setShowSppPanel(false); setSelectedSpp(null); } }}>
           <div className={styles.sppOuterCard}>
@@ -459,7 +458,6 @@ export default function HomeOrangTua() {
                 {!selectedSpp.lunas ? (
                   <button className={styles.btnBayarOrtu} onClick={async () => {
                     if (!selectedPayMethod) { showToast('Pilih metode pembayaran terlebih dahulu.', true); return; }
-                    // Kirim notif bayar ke guru via Supabase
                     await insertNotification('spp_pay', {
                       siswaId: MY_CHILD.id, siswaName: childName,
                       bulan: selectedSpp.bulan, nominal: selectedSpp.nominal,

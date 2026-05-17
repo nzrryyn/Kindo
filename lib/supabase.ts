@@ -129,7 +129,6 @@ export function subscribeAssessments(
 export type SppRow = {
   id: string; siswa_id: string; bulan: string;
   nominal: number; status: string; updated_at?: string;
-  // field tambahan yang disimpan di kolom terpisah atau bisa diperluas via jsonb
 };
 
 export async function fetchSppRecords(): Promise<any[]> {
@@ -195,7 +194,6 @@ export async function deleteDokumentasi(id: string): Promise<void> {
 
 // ─────────────────────────────────────────
 // Realtime subscription — nama siswa
-// Dipakai di semua halaman agar nama sinkron
 // ─────────────────────────────────────────
 export function subscribeStudentNames(
   onChange: (names: Record<string, string>) => void
@@ -210,15 +208,9 @@ export function subscribeStudentNames(
     )
     .subscribe();
 }
+
 // ─────────────────────────────────────────
 // kegiatan_harian
-// Disimpan per tanggal agar ortu bisa lihat kegiatan hari ini
-// SQL: create table kegiatan_harian (
-//   tanggal date primary key,
-//   items   jsonb not null,
-//   updated_at timestamp default now()
-// );
-// alter publication supabase_realtime add table kegiatan_harian;
 // ─────────────────────────────────────────
 export async function fetchKegiatanHarian(
   tanggal: string
@@ -260,19 +252,6 @@ export function subscribeKegiatanHarian(
 // ─────────────────────────────────────────
 // izin_requests
 // ─────────────────────────────────────────
-// SQL: create table izin_requests (
-//   id         bigint generated always as identity primary key,
-//   siswa_id   text not null,
-//   siswa_name text not null,
-//   kelas      text,
-//   type       text not null,   -- 'izin' | 'sakit'
-//   alasan     text not null,
-//   date       date not null,
-//   status     text default 'pending',
-//   created_at timestamp default now()
-// );
-// alter publication supabase_realtime add table izin_requests;
-
 export async function fetchIzinRequests(): Promise<any[]> {
   const { data, error } = await supabase
     .from('izin_requests')
@@ -323,9 +302,9 @@ export function subscribeIzinRequests(onChange: () => void) {
     )
     .subscribe();
 }
+
 // ─────────────────────────────────────────
-// profile_guru
-// Tabel: profiles_guru (id text primary key, nama text, tanggal_lahir text, photo_url text, updated_at timestamp)
+// profiles_guru
 // ─────────────────────────────────────────
 const GURU_ID = 'guru_utama';
 
@@ -335,16 +314,24 @@ export async function fetchProfileGuru(): Promise<{ nama?: string; tanggal_lahir
     .select('nama, tanggal_lahir, photo_url')
     .eq('id', GURU_ID)
     .single();
-  if (error) { console.error('fetchProfileGuru:', error); return null; }
+  // .single() error jika row belum ada — return null, bukan crash
+  if (error) {
+    if (error.code !== 'PGRST116') console.error('fetchProfileGuru:', error);
+    return null;
+  }
   return data;
 }
 
 export async function upsertProfileGuru(fields: {
   nama?: string; tanggal_lahir?: string; photo_url?: string;
 }): Promise<void> {
+  // FIX: pastikan id selalu disertakan agar upsert tidak gagal
   const { error } = await supabase
     .from('profiles_guru')
-    .upsert({ id: GURU_ID, ...fields, updated_at: new Date().toISOString() });
+    .upsert(
+      { id: GURU_ID, ...fields, updated_at: new Date().toISOString() },
+      { onConflict: 'id' }
+    );
   if (error) { console.error('upsertProfileGuru:', error); throw error; }
 }
 
@@ -360,8 +347,7 @@ export async function uploadProfilePhoto(file: File): Promise<string | null> {
 }
 
 // ─────────────────────────────────────────
-// profile_ortu
-// Tabel: profiles_ortu (siswa_id text primary key, nama text, tanggal_lahir text, updated_at timestamp)
+// profiles_ortu
 // ─────────────────────────────────────────
 export async function fetchProfileOrtu(
   siswaId: string
@@ -371,7 +357,10 @@ export async function fetchProfileOrtu(
     .select('nama, tanggal_lahir')
     .eq('siswa_id', siswaId)
     .single();
-  if (error) { console.error('fetchProfileOrtu:', error); return null; }
+  if (error) {
+    if (error.code !== 'PGRST116') console.error('fetchProfileOrtu:', error);
+    return null;
+  }
   return data;
 }
 
@@ -381,6 +370,9 @@ export async function upsertProfileOrtu(
 ): Promise<void> {
   const { error } = await supabase
     .from('profiles_ortu')
-    .upsert({ siswa_id: siswaId, ...fields, updated_at: new Date().toISOString() });
+    .upsert(
+      { siswa_id: siswaId, ...fields, updated_at: new Date().toISOString() },
+      { onConflict: 'siswa_id' }
+    );
   if (error) { console.error('upsertProfileOrtu:', error); throw error; }
 }
