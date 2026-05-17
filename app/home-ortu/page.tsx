@@ -4,6 +4,14 @@ import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import styles from './ortu.module.css';
+import { supabase } from '@/lib/supabase';
+import {
+  fetchStudentNames, subscribeStudentNames,
+  fetchSppRecords,
+  fetchAttendance,
+  fetchAssessments,
+  fetchNotifications, insertNotification, markNotificationsRead,
+} from '@/lib/supabase';
 
 // ─────────────────────────────────────────
 // TIPE DATA
@@ -76,7 +84,7 @@ export default function HomeOrangTua() {
   // ── Perkembangan panel ──
   const [showPerkPanel, setShowPerkPanel] = useState(false);
 
-  // ── Nama anak — sinkron dengan kindo_student_names dari guru ──
+  // ── Nama anak — sinkron dengan Supabase student_names
   const [childName, setChildName] = useState(MY_CHILD.name);
 
   // ── UI ──
@@ -91,28 +99,36 @@ export default function HomeOrangTua() {
   useEffect(() => {
     const savedDark = localStorage.getItem('kindo_dark');
     if (savedDark === 'true') setIsDark(true);
+
+    // SPP dari Supabase
+    fetchSppRecords().then(rows => {
+      const mySpp = rows
+        .filter((r: any) => (r.siswa_id ?? r.siswaId) === MY_CHILD.id)
+        .map((r: any) => ({
+          id: r.id, siswaId: r.siswa_id ?? r.siswaId,
+          siswaName: r.siswa_name ?? MY_CHILD.name,
+          bulan: r.bulan, tahun: r.tahun ?? '2026',
+          nominal: r.nominal,
+          jatuhTempo: r.jatuh_tempo ?? r.jatuhTempo ?? '',
+          lunas: r.status === 'lunas',
+        }));
+      setSppRecords(mySpp.length > 0 ? mySpp : SPP_DUMMY.filter(r => r.siswaId === MY_CHILD.id));
+    });
+
+    // Nama anak — dari Supabase, realtime
+    fetchStudentNames().then(names => {
+      if (names[MY_CHILD.id]) setChildName(names[MY_CHILD.id]);
+    });
+    const nameSub = subscribeStudentNames(names => {
+      setChildName(names[MY_CHILD.id] || MY_CHILD.name);
+    });
+
+    // Refresh data berkala (attendance, assessment, izin)
     loadAll();
-    const savedSpp: SppRecord[] = JSON.parse(localStorage.getItem('kindo_spp_records') || 'null') || SPP_DUMMY;
-    setSppRecords(savedSpp.filter(r => r.siswaId === MY_CHILD.id));
-
-    // Load nama anak dari kindo_student_names
-    const savedNames = JSON.parse(localStorage.getItem('kindo_student_names') || '{}');
-    if (savedNames[MY_CHILD.id]) setChildName(savedNames[MY_CHILD.id]);
-
-    // Sinkron nama anak jika diubah guru dari halaman lain
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'kindo_student_names' && e.newValue) {
-        const names = JSON.parse(e.newValue);
-        if (names[MY_CHILD.id]) setChildName(names[MY_CHILD.id]);
-        else setChildName(MY_CHILD.name);
-      }
-    };
-    window.addEventListener('storage', handleStorageChange);
-
     const interval = setInterval(loadAll, 15000);
     return () => {
       clearInterval(interval);
-      window.removeEventListener('storage', handleStorageChange);
+      supabase.removeChannel(nameSub);
     };
   }, []);
 
@@ -127,25 +143,30 @@ export default function HomeOrangTua() {
   // ─────────────────────────────────────────
   // LOAD DATA
   // ─────────────────────────────────────────
-  const loadAll = () => {
+  const loadAll = async () => {
     const today = new Date().toISOString().split('T')[0];
 
-    // Kegiatan guru
+    // Kegiatan guru (tetap dari localStorage — hanya guru yang menulis)
     const kg = localStorage.getItem('kegiatanKindo');
     setKegiatanHarian(kg ? (() => { try { return JSON.parse(kg); } catch { return []; } })() : []);
 
-    // Absen anak
-    const att: AttendanceData = JSON.parse(localStorage.getItem('kindo_attendance') || '{}');
-    setStatusAbsen(att[`${MY_CHILD.id}_${today}`] || 'Belum tercatat');
+    // Absen anak dari Supabase
+    fetchAttendance().then(att => {
+      setStatusAbsen(att[`${MY_CHILD.id}_${today}`] || 'Belum tercatat');
+    });
 
-    // Penilaian guru
-    const asm: Record<string, StudentAssessment> = JSON.parse(localStorage.getItem('kindo_assessments') || '{}');
-    setAssessment(asm[MY_CHILD.id] || null);
+    // Penilaian guru dari Supabase
+    fetchAssessments().then(asm => {
+      setAssessment(asm[MY_CHILD.id] || null);
+    });
 
-    // Izin request hari ini
-    const requests: IzinRequest[] = JSON.parse(localStorage.getItem('kindo_izin_requests') || '[]');
-    const todayReq = requests.find(r => r.studentId === MY_CHILD.id && r.date === today);
-    setIzinRequest(todayReq || null);
+    // Izin request dari Supabase
+    fetchNotifications('izin_request').then(notifs => {
+      const todayReq = notifs.find((n: any) =>
+        n.data.studentId === MY_CHILD.id && n.data.date === today && n.data.status === 'pending'
+      );
+      setIzinRequest(todayReq ? { ...todayReq.data, id: todayReq.id } : null);
+    });
   };
 
   // ─────────────────────────────────────────
@@ -166,25 +187,8 @@ export default function HomeOrangTua() {
       timestamp: Date.now(),
     };
 
-    // Simpan ke daftar izin requests (guru baca dari sini)
-    const requests: IzinRequest[] = JSON.parse(localStorage.getItem('kindo_izin_requests') || '[]');
-    // Remove request lama hari ini jika ada
-    const filtered = requests.filter(r => !(r.studentId === MY_CHILD.id && r.date === today));
-    filtered.unshift(newReq);
-    localStorage.setItem('kindo_izin_requests', JSON.stringify(filtered));
-
-    // Simpan notif untuk guru
-    const notifs = JSON.parse(localStorage.getItem('kindo_notif_izin') || '[]');
-    notifs.unshift({
-      id: newReq.id,
-      studentId: MY_CHILD.id,
-      studentName: childName,
-      alasan: izinAlasan,
-      date: today,
-      read: false,
-      timestamp: Date.now(),
-    });
-    localStorage.setItem('kindo_notif_izin', JSON.stringify(notifs));
+    // Simpan izin request ke Supabase
+    insertNotification('izin_request', newReq);
 
     setIzinRequest(newReq);
     setIzinAlasan('');
@@ -560,19 +564,12 @@ export default function HomeOrangTua() {
                     className={styles.btnBayarOrtu}
                     onClick={() => {
                       if (!selectedPayMethod) { showToast('Pilih metode pembayaran terlebih dahulu.', true); return; }
-                      // Kirim notif bayar ke guru
-                      const payNotifs = JSON.parse(localStorage.getItem('kindo_pay_notifs') || '[]');
-                      payNotifs.unshift({
-                        id: Date.now(),
-                        siswaId: MY_CHILD.id,
-                        siswaName: childName,
-                        bulan: selectedSpp.bulan,
-                        nominal: selectedSpp.nominal,
+                      // Kirim notif bayar ke guru via Supabase
+                      insertNotification('spp_pay', {
+                        siswaId: MY_CHILD.id, siswaName: childName,
+                        bulan: selectedSpp.bulan, nominal: selectedSpp.nominal,
                         metode: selectedPayMethod,
-                        timestamp: Date.now(),
-                        read: false,
                       });
-                      localStorage.setItem('kindo_pay_notifs', JSON.stringify(payNotifs));
                       // Update record lokal
                       const updated = sppRecords.map(r =>
                         r.id === selectedSpp.id ? { ...r, lunas: true } : r

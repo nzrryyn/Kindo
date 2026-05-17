@@ -4,6 +4,11 @@ import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import styles from './dokumentasi.module.css';
+import { supabase } from '@/lib/supabase';
+import {
+  fetchStudentNames, upsertStudentName, subscribeStudentNames,
+  fetchDokumentasi, upsertDokumentasi, deleteDokumentasi,
+} from '@/lib/supabase';
 
 type DokItem = {
   id: string; namaKegiatan: string; kelas: string;
@@ -43,19 +48,10 @@ export default function DokumentasiPage() {
   useEffect(() => {
     const savedDark = localStorage.getItem('kindo_dark');
     if (savedDark === 'true') setIsDark(true);
-    const saved: DokItem[] = JSON.parse(localStorage.getItem('kindo_dokumentasi') || '[]');
-    setItems(saved);
-    const savedNames = JSON.parse(localStorage.getItem('kindo_student_names') || '{}');
-    setStudentNames(savedNames);
-
-    // Sinkron nama siswa jika diubah dari halaman lain
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'kindo_student_names' && e.newValue) {
-        setStudentNames(JSON.parse(e.newValue));
-      }
-    };
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
+    fetchDokumentasi().then(setItems);
+    fetchStudentNames().then(setStudentNames);
+    const nameSub = subscribeStudentNames(setStudentNames);
+    return () => { supabase.removeChannel(nameSub); };
   }, []);
 
   const showToast = (msg: string, err = false) => {
@@ -71,7 +67,7 @@ export default function DokumentasiPage() {
     if (!trimmed) { setEditingStudentId(null); return; }
     const updated = { ...studentNames, [siswaId]: trimmed };
     setStudentNames(updated);
-    localStorage.setItem('kindo_student_names', JSON.stringify(updated));
+    upsertStudentName(siswaId, trimmed);
     setEditingStudentId(null);
     // Update chips di form jika siswa ini ada di formSiswa
     setFormSiswa(prev => prev.map(s => s.id === siswaId ? { ...s, name: trimmed } : s));
@@ -79,7 +75,6 @@ export default function DokumentasiPage() {
 
   const saveItems = (newItems: DokItem[]) => {
     setItems(newItems);
-    localStorage.setItem('kindo_dokumentasi', JSON.stringify(newItems));
   };
 
   const openAdd = () => {
@@ -111,12 +106,14 @@ export default function DokumentasiPage() {
       id: Date.now().toString(), namaKegiatan: formNama.trim(), kelas: formKelas,
       siswa: formSiswa, tanggal: new Date().toLocaleDateString('id-ID'), gambar: formGambar,
     };
+    upsertDokumentasi(newItem.id, newItem);
     saveItems([newItem, ...items]);
     setPanelOpen(false);
     showToast('Dokumentasi berhasil ditambahkan!');
   };
 
   const handleHapus = (id: string) => {
+    deleteDokumentasi(id);
     saveItems(items.filter(i => i.id !== id));
     setPanelOpen(false);
     showToast('Dokumentasi dihapus.');

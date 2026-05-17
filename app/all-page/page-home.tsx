@@ -912,7 +912,7 @@ export default function HomePage() {
 
             {/* Label di luar kotak */}
             <div className={styles.barKegiatanLabels}>
-              <span className={styles.barKegiatanLabel}>Data Siswa</span>
+              <span className={styles.barKegiatanLabel}>Absen Siswa</span>
               <span className={styles.barKegiatanLabel}>Dokumentasi Kegiatan</span>
               <span className={styles.barKegiatanLabel}>Laporan Perkembangan</span>
             </div>

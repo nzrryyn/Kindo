@@ -153,14 +153,20 @@ export default function UserOrtu() {
         </button>
       </div>
 
-      {/* ── NAVBAR — ortu: home + user saja, desain sama guru ── */}
-      <nav className={styles.bottomNavbar}>
-        <div className={styles.navItem} onClick={() => router.push('/home-ortu')}>
-          <Image src="/home.svg" alt="Home" width={24} height={24} />
-        </div>
-        <div className={styles.navItem} onClick={() => router.push('/user-ortu')}>
-          <Image src="/user.svg" alt="User" width={24} height={24} />
-        </div>
+      {/* Navbar ortu — 2 icon */}
+      <nav className={styles.navbar} style={{ width: 160 }}>
+        <button className={styles.navItem} onClick={() => router.push('/home-ortu')}>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+            <polyline points="9 22 9 12 15 12 15 22"/>
+          </svg>
+        </button>
+        <button className={`${styles.navItem} ${styles.navActive}`}>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+            <circle cx="12" cy="7" r="4"/>
+          </svg>
+        </button>
       </nav>
 
       {toast.visible && (

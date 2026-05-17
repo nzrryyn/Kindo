@@ -76,6 +76,9 @@ export default function HomeOrangTua() {
   // ── Perkembangan panel ──
   const [showPerkPanel, setShowPerkPanel] = useState(false);
 
+  // ── Nama anak — sinkron dengan kindo_student_names dari guru ──
+  const [childName, setChildName] = useState(MY_CHILD.name);
+
   // ── UI ──
   const [showAllKegiatan, setShowAllKegiatan] = useState(false);
   const [showUserPopup, setShowUserPopup] = useState(false);
@@ -91,8 +94,26 @@ export default function HomeOrangTua() {
     loadAll();
     const savedSpp: SppRecord[] = JSON.parse(localStorage.getItem('kindo_spp_records') || 'null') || SPP_DUMMY;
     setSppRecords(savedSpp.filter(r => r.siswaId === MY_CHILD.id));
+
+    // Load nama anak dari kindo_student_names
+    const savedNames = JSON.parse(localStorage.getItem('kindo_student_names') || '{}');
+    if (savedNames[MY_CHILD.id]) setChildName(savedNames[MY_CHILD.id]);
+
+    // Sinkron nama anak jika diubah guru dari halaman lain
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'kindo_student_names' && e.newValue) {
+        const names = JSON.parse(e.newValue);
+        if (names[MY_CHILD.id]) setChildName(names[MY_CHILD.id]);
+        else setChildName(MY_CHILD.name);
+      }
+    };
+    window.addEventListener('storage', handleStorageChange);
+
     const interval = setInterval(loadAll, 15000);
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('storage', handleStorageChange);
+    };
   }, []);
 
   useEffect(() => {
@@ -137,7 +158,7 @@ export default function HomeOrangTua() {
     const newReq: IzinRequest = {
       id: Date.now(),
       studentId: MY_CHILD.id,
-      studentName: MY_CHILD.name,
+      studentName: childName,
       type: izinType,
       alasan: izinAlasan,
       date: today,
@@ -157,9 +178,7 @@ export default function HomeOrangTua() {
     notifs.unshift({
       id: newReq.id,
       studentId: MY_CHILD.id,
-      studentName: MY_CHILD.name,
-      kelas: MY_CHILD.kelas,
-      type: izinType,
+      studentName: childName,
       alasan: izinAlasan,
       date: today,
       read: false,
@@ -262,7 +281,7 @@ export default function HomeOrangTua() {
 
       {/* ── HEADER ── */}
       <div className={styles.header}>
-        <div className={styles.headerName}>{MY_CHILD.name}</div>
+        <div className={styles.headerName}>{childName}</div>
         <div ref={popupRef} style={{ position: 'relative' }}>
           <div className={styles.avatarCircle} onClick={() => setShowUserPopup(p => !p)}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#333" strokeWidth="1.8">
@@ -271,11 +290,11 @@ export default function HomeOrangTua() {
           </div>
           {showUserPopup && (
             <div className={styles.userPopup}>
-              <div style={{ fontWeight: 700, fontSize: 14, color: isDark ? '#F0F0F0' : '#333' }}>{MY_CHILD.name}</div>
+              <div style={{ fontWeight: 700, fontSize: 14, color: isDark ? '#F0F0F0' : '#333' }}>{childName}</div>
               <div style={{ fontSize: 12, color: '#A8A8A8', marginBottom: 12 }}>Orang Tua · {MY_CHILD.kelas}</div>
               <div style={{ height: 1, background: isDark ? '#2E2E2E' : '#E8E8E8', marginBottom: 12 }} />
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                <span style={{ fontSize: 13, color: isDark ? '#D0D0D0' : '#555' }}>{isDark ? '🌙 Mode Gelap' : '☀️ Mode Terang'}</span>
+                <span style={{ fontSize: 13, color: isDark ? '#D0D0D0' : '#555' }}>{isDark ? 'Mode Gelap' : 'Mode Terang'}</span>
                 <div onClick={toggleDark} style={{ width: 40, height: 22, borderRadius: 11, backgroundColor: isDark ? '#F8F7F2' : '#333', position: 'relative', cursor: 'pointer', transition: 'background .25s', flexShrink: 0 }}>
                   <div style={{ position: 'absolute', top: 3, left: isDark ? 21 : 3, width: 16, height: 16, borderRadius: '50%', backgroundColor: isDark ? '#333' : '#F8F7F2', transition: 'left .25s' }} />
                 </div>
@@ -481,7 +500,7 @@ export default function HomeOrangTua() {
                       </svg>
                       Nama siswa:
                     </span>
-                    <span className={styles.sppInfoVal}>{MY_CHILD.name}</span>
+                    <span className={styles.sppInfoVal}>{childName}</span>
                   </div>
                   <div className={styles.sppInfoRow}>
                     <span className={styles.sppInfoLabel}>
@@ -546,7 +565,7 @@ export default function HomeOrangTua() {
                       payNotifs.unshift({
                         id: Date.now(),
                         siswaId: MY_CHILD.id,
-                        siswaName: MY_CHILD.name,
+                        siswaName: childName,
                         bulan: selectedSpp.bulan,
                         nominal: selectedSpp.nominal,
                         metode: selectedPayMethod,
@@ -602,7 +621,7 @@ export default function HomeOrangTua() {
         <div className={styles.overlay} onClick={e => { if (e.target === e.currentTarget) setShowPerkPanel(false); }}>
           <div className={styles.panel}>
             <div className={styles.panelTitle}>Perkembangan Anak</div>
-            <div className={styles.panelSub}>{MY_CHILD.name} · {MY_CHILD.kelas}</div>
+            <div className={styles.panelSub}>{childName} · {MY_CHILD.kelas}</div>
             {assessment ? (
               <>
                 {/* Info dasar */}
